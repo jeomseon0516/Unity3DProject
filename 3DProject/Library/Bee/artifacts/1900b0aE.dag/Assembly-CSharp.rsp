@@ -347,6 +347,7 @@
 -r:"Library/Bee/artifacts/1900b0aE.dag/UnityEngine.UI.ref.dll"
 "Assets/MyScriptsPack/Constants.cs"
 "Assets/MyScriptsPack/CustomMath.cs"
+"Assets/MyScriptsPack/ObjectPoolManager.cs"
 "Assets/MyScriptsPack/Singleton.cs"
 "Assets/MyScriptsPack/YieldCache.cs"
 -langversion:9.0
