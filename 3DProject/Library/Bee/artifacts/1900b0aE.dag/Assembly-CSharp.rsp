@@ -350,6 +350,10 @@
 "Assets/MyScriptsPack/ObjectPoolManager.cs"
 "Assets/MyScriptsPack/Singleton.cs"
 "Assets/MyScriptsPack/YieldCache.cs"
+"Assets/Scripts/MyClass.cs"
+"Assets/WayPoint/Editors/WayPoint.cs"
+"Assets/WayPoint/Editors/WayPointEditor.cs"
+"Assets/WayPoint/Node.cs"
 -langversion:9.0
 
 /deterministic

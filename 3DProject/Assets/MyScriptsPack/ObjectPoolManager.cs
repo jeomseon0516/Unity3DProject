@@ -6,14 +6,15 @@ public sealed class ObjectPoolManager : Singleton<ObjectPoolManager>, ISingleton
 {
     public void Init()
     {
-
+        print("HelloWorld!");
     }
 
-    // Update is called once per frame
     void Update()
     {
 
     }
+
+    public void Hello() {}
 
     private ObjectPoolManager() {}
 }

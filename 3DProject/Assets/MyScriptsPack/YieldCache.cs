@@ -9,7 +9,8 @@ public static class YieldCache
 {
     private static readonly Dictionary<float, WaitForSeconds> time = new Dictionary<float, WaitForSeconds>();
     public static readonly WaitForFixedUpdate WaitForFixedUpdate = new WaitForFixedUpdate();
-    public static readonly WaitForEndOfFrame waitForEndOfFrame = new WaitForEndOfFrame();
+    public static readonly WaitForEndOfFrame WaitForEndOfFrame = new WaitForEndOfFrame();
+
     public static WaitForSeconds WaitForSeconds(float _time)
     {
         if (!time.TryGetValue(_time, out WaitForSeconds wfs))

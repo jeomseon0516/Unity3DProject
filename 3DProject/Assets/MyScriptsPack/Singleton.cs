@@ -1,12 +1,12 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System;
 using SingletonBase;
 
 public interface ISingleton 
 {
-    void Init();
+    public void Init();
 }
 
 namespace SingletonBase
@@ -39,19 +39,23 @@ public abstract class Singleton<T> : SingletonBase<Singleton<T>> where T : Singl
     {
         if (CreateInstance(() => { TryGetComponent(out instance); }))
             Destroy(gameObject);
+
+        DontDestroyOnLoad(gameObject);
     }
 
     private static bool CreateInstance(Action action)
     {
-        if (instance is null)
+        if (ReferenceEquals(instance, null) || !instance)
         {
-            if ((instance = FindObjectOfType<T>()) is null)
+            if (ReferenceEquals((instance = FindObjectOfType<T>()), null) || !instance)
                 action();
             else
-                return false;
+            {
+                instance.name = typeof(T).ToString();
+                instance.Init();
 
-            instance.name = typeof(T).ToString();
-            instance.Init();
+                return false;
+            }
         }
 
         return true;
