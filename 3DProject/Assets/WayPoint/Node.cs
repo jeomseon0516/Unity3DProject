@@ -2,15 +2,19 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(SphereCollider))]
 public class Node : MonoBehaviour
 {
-    // Start is called before the first frame update
+    [field:SerializeField]
+    public Node Next { get; set; }
+    private void Awake()
+    {
+        GetComponent<SphereCollider>().isTrigger = true;
+    }
     void Start()
     {
-        
     }
-
-    // Update is called once per frame
+    
     void Update()
     {
         
