@@ -6,23 +6,21 @@ using UnityEngine;
 public class EnemyController : MonoBehaviour
 {
     public Node Target { get; set; }
-    private float Speed { get; set; }
+    [field: SerializeField, Range(10, 50)]
+    private float Speed { get; set; } = 10.0f;
 
-    [field: SerializeField, Range(0, 360)]
+    [field:SerializeField, Range(0, 360)]
     private float Angle { get; set; } = 90;
 
-    Vector3 leftRay, rightRay;
+    private Vector3 leftRay, rightRay; // .. 더듬이 ..
 
     private void Awake()
     {
         GetComponent<Rigidbody>().useGravity = false;
         Target = GameObject.Find("NAKZI").transform.GetChild(0).GetComponent<Node>();
-
     }
     void Start()
     {
-        Speed = 5.0f;
-
         float x = 5.0f;
         float z = 5.0f;
 
@@ -39,22 +37,27 @@ public class EnemyController : MonoBehaviour
             transform.position += direction * Speed * Time.deltaTime;
             transform.LookAt(Target.transform);
 
-            float radian = CustomMath.ConvertFromAngleToRadian(Angle);
-            Vector3 rotateValue = new Vector3(Mathf.Sin(radian), 0, Mathf.Cos(radian));
+            Vector3 leftPoint  = (transform.position + leftRay);
+            Vector3 rightPoint = (transform.position + rightRay); 
 
-            Vector3 leftDirection  = transform.position + leftRay  + rotateValue * 5.0f;
-            Vector3 rightDirection = transform.position + rightRay + rotateValue * 5.0f;
+            float leftRadian  = CustomMath.GetToConvertRotationToRadian(leftPoint.x, transform.position.x,
+                                                                        leftPoint.z, transform.position.z, 
+                                                                        transform.eulerAngles.y);
 
-            // leftDirection  = new Vector3(leftDirection.x  * rotateValue.x, 0, leftDirection.z  * rotateValue.z);
-            // rightDirection = new Vector3(rightDirection.x * rotateValue.x, 0, rightDirection.z * rotateValue.z);
+            float rightRadian = CustomMath.GetToConvertRotationToRadian(rightPoint.x, transform.position.x,
+                                                                        rightPoint.z, transform.position.z,
+                                                                        transform.eulerAngles.y);
 
-            Debug.DrawRay(transform.position, leftDirection, Color.red);
+            Vector3 leftDirection  = new Vector3(Mathf.Sin(leftRadian),  0, Mathf.Cos(leftRadian));
+            Vector3 rightDirection = new Vector3(Mathf.Sin(rightRadian), 0, Mathf.Cos(rightRadian));
+
+            Debug.DrawRay(transform.position, leftDirection * 5.0f, Color.red);
             if (Physics.Raycast(transform.position, leftDirection, out RaycastHit hit, 5.0f))
             {
 
             }
 
-            Debug.DrawRay(transform.position, rightDirection, Color.red);
+            Debug.DrawRay(transform.position, rightDirection * 5.0f, Color.red);
             if (Physics.Raycast(transform.position, rightDirection, out hit, 5.0f))
             {
 
