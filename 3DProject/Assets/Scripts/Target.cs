@@ -28,7 +28,7 @@ public class Target : MonoBehaviour
 
         if (customCollision.Vertics[index].x > transform.position.x && index > 0)
             --index;
-        else if (index + 1 <= customCollision.Vertics.Length && customCollision.Vertics[index + 1].x < transform.position.x)
+        else if (index + 1 < customCollision.Vertics.Length - 1 && customCollision.Vertics[index + 1].x < transform.position.x)
             ++index;
 
         if (customCollision.Vertics[index].x     < transform.position.x &&
