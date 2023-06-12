@@ -5,7 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class EnemyController : MonoBehaviour
 {
-    public Node Target { get; set; }
+    public Node Target { get; private set; }
     [field:SerializeField, Range(10, 50)] private float Speed { get; set; } = 10.0f;
     [field:SerializeField, Range(0, 360)] private float Angle { get; set; } = 90;
 
@@ -38,7 +38,11 @@ public class EnemyController : MonoBehaviour
         Vector3 direction = (Target.transform.position - transform.position).normalized;
 
         if (isMove)
-            transform.position += direction * Speed * Time.deltaTime;
+            transform.position = Vector3.Lerp(
+                transform.position,
+                Target.transform.position,
+                0.016f);
+            //transform.position += direction * Speed * Time.deltaTime;
     }
 
     IEnumerator SetRotation()
@@ -52,14 +56,14 @@ public class EnemyController : MonoBehaviour
         {
             time = 0.0f;
 
-            Vector3 lookPosition = transform.position + new Vector3(Random.Range(-30, 30), 0.0f, Random.Range(-30, 30));
+            float radian = CustomMath.ConvertFromAngleToRadian(transform.eulerAngles.y + Random.Range(-Angle, Angle));
 
             while (time < 1.0f)
             {
                 transform.rotation = Quaternion.Lerp(
-                transform.rotation,
-                Quaternion.LookRotation((lookPosition - transform.position).normalized),
-                0.016f);
+                    transform.rotation, 
+                    Quaternion.LookRotation(new Vector3(Mathf.Sin(radian), 0.0f, Mathf.Cos(radian))),
+                    0.016f);
 
                 time += Time.deltaTime;
                 yield return null;
@@ -87,7 +91,7 @@ public class EnemyController : MonoBehaviour
         Vector3 leftPoint  = transform.position + leftRay;
         Vector3 rightPoint = transform.position + rightRay;
 
-        float leftRadian = CustomMath.GetToConvertRotationToRadian(leftPoint.x, transform.position.x,
+        float leftRadian  = CustomMath.GetToConvertRotationToRadian(leftPoint.x, transform.position.x,
                                                                     leftPoint.z, transform.position.z,
                                                                     transform.eulerAngles.y);
 
@@ -95,7 +99,7 @@ public class EnemyController : MonoBehaviour
                                                                     rightPoint.z, transform.position.z,
                                                                     transform.eulerAngles.y);
 
-        Vector3 leftDirection  = new Vector3(Mathf.Sin(leftRadian), 0, Mathf.Cos(leftRadian));
+        Vector3 leftDirection  = new Vector3(Mathf.Sin(leftRadian),  0, Mathf.Cos(leftRadian));
         Vector3 rightDirection = new Vector3(Mathf.Sin(rightRadian), 0, Mathf.Cos(rightRadian));
 
         Debug.DrawRay(transform.position, leftDirection * 5.0f, Color.red);
