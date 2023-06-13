@@ -6,32 +6,95 @@ using UnityEngine;
 public class EnemyController : MonoBehaviour
 {
     public Node Target { get; private set; }
-    [field:SerializeField, Range(10, 50)] private float Speed { get; set; } = 10.0f;
-    [field:SerializeField, Range(0, 360)] private float Angle { get; set; } = 90;
+    [field: SerializeField, Range(10, 50)] private float Speed { get; set; } = 10.0f;
+    [field: SerializeField, Range(0, 360)] private float Angle { get; set; } = 90;
+    [field: SerializeField, Range(2, 360)] private int RayCount { get; set; }
+    [field: SerializeField] private Material material { get; set; }
 
-    private Vector3 leftRay, rightRay; // .. 더듬이 ..
+    [field: SerializeField] private List<Vector3> vertices { get; set; }
 
     private bool isMove;
 
     private void Awake()
     {
         GetComponent<Rigidbody>().useGravity = false;
-        Target = GameObject.Find("NAKZI").transform.GetChild(0).GetComponent<Node>();
+        GameObject parentNode = GameObject.Find("NAKZI");
+
+        if (parentNode)
+        {
+            parentNode.transform.GetChild(0).TryGetComponent(out Node target);
+            Target = target;
+        }
     }
     void Start()
     {
-        float x = 5.0f;
-        float z = 5.0f;
+        RayCount = 5;
+
+        material.color = Color.red;
 
         isMove = false;
-
-        leftRay  = new Vector3(-x, 0, z);
-        rightRay = new Vector3(x, 0, z);
+        Angle = 45;
 
         StartCoroutine(SetRotation());
     }
 
     void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, Mathf.Infinity))
+            {
+                hit.transform.gameObject.TryGetComponent(out MeshFilter meshFilter);
+                Vector3[] verticesPoint = meshFilter.mesh.vertices;
+
+                for (int i = 0; i < verticesPoint.Length; ++i)
+                    if (!vertices.Contains(verticesPoint[i]) && verticesPoint[i].y < transform.position.y)
+                        vertices.Add(verticesPoint[i]);
+            }
+
+            for (int i = 0; i < vertices.Count; ++i)
+            {
+                GameObject obj = new GameObject(i.ToString());
+                obj.transform.position = new Vector3(
+                    vertices[i].x * hit.transform.lossyScale.x,
+                    vertices[i].y,
+                    vertices[i].z * hit.transform.lossyScale.z) + hit.transform.position;
+
+                // obj.AddComponent<MyGizmo>();
+            }
+        }
+
+        Move();
+    }
+    private void FixedUpdate()
+    {
+        float pivotRadian = CustomMath.ConvertFromAngleToRadian(transform.eulerAngles.y);
+        float intervalAngle = Angle / RayCount;
+        float radian = -(CustomMath.ConvertFromAngleToRadian(RayCount * 0.5f * intervalAngle));
+
+        for (int i = 0; i < RayCount + 1; ++i)
+        {
+            float calcRadian = pivotRadian + radian;
+            radian += CustomMath.ConvertFromAngleToRadian(intervalAngle);
+
+            Vector3 direction = new Vector3(Mathf.Sin(calcRadian), 0, Mathf.Cos(calcRadian));
+
+            Debug.DrawRay(transform.position, direction * 5.0f, Color.red);
+            if (Physics.Raycast(transform.position, direction, out RaycastHit hit, 5.0f))
+            {
+
+            }
+        }
+    }
+    private void OnTriggerEnter(Collider other)
+    {
+        if (ReferenceEquals(Target.gameObject, other.gameObject))
+        {
+            StartCoroutine(SetRotation());
+            Target = Target.Next;
+        }
+    }
+    void Move()
     {
         if (!Target) return;
 
@@ -42,7 +105,7 @@ public class EnemyController : MonoBehaviour
                 transform.position,
                 Target.transform.position,
                 0.016f);
-            //transform.position += direction * Speed * Time.deltaTime;
+        //transform.position += direction * Speed * Time.deltaTime;
     }
 
     IEnumerator SetRotation()
@@ -61,7 +124,7 @@ public class EnemyController : MonoBehaviour
             while (time < 1.0f)
             {
                 transform.rotation = Quaternion.Lerp(
-                    transform.rotation, 
+                    transform.rotation,
                     Quaternion.LookRotation(new Vector3(Mathf.Sin(radian), 0.0f, Mathf.Cos(radian))),
                     0.016f);
 
@@ -74,53 +137,21 @@ public class EnemyController : MonoBehaviour
 
         while (time < 1.0f)
         {
-            transform.rotation = Quaternion.Lerp(
-                transform.rotation,
-                Quaternion.LookRotation((Target.transform.position - transform.position).normalized),
-                0.016f);
+            if (Target)
+            {
+                transform.rotation = Quaternion.Lerp(
+                    transform.rotation,
+                    Quaternion.LookRotation((Target.transform.position - transform.position).normalized),
+                    0.016f);
 
-            time += Time.deltaTime;
+                time += Time.deltaTime;
+            }
+
             yield return null;
         }
 
         isMove = true;
     }
 
-    private void FixedUpdate()
-    {
-        Vector3 leftPoint  = transform.position + leftRay;
-        Vector3 rightPoint = transform.position + rightRay;
 
-        float leftRadian  = CustomMath.GetToConvertRotationToRadian(leftPoint.x, transform.position.x,
-                                                                    leftPoint.z, transform.position.z,
-                                                                    transform.eulerAngles.y);
-
-        float rightRadian = CustomMath.GetToConvertRotationToRadian(rightPoint.x, transform.position.x,
-                                                                    rightPoint.z, transform.position.z,
-                                                                    transform.eulerAngles.y);
-
-        Vector3 leftDirection  = new Vector3(Mathf.Sin(leftRadian),  0, Mathf.Cos(leftRadian));
-        Vector3 rightDirection = new Vector3(Mathf.Sin(rightRadian), 0, Mathf.Cos(rightRadian));
-
-        Debug.DrawRay(transform.position, leftDirection * 5.0f, Color.red);
-        if (Physics.Raycast(transform.position, leftDirection, out RaycastHit hit, 5.0f))
-        {
-
-        }
-
-        Debug.DrawRay(transform.position, rightDirection * 5.0f, Color.red);
-        if (Physics.Raycast(transform.position, rightDirection, out hit, 5.0f))
-        {
-
-        }
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (ReferenceEquals(Target.gameObject, other.gameObject))
-        {
-            StartCoroutine(SetRotation());
-            Target = Target.Next;
-        }
-    }
 }
