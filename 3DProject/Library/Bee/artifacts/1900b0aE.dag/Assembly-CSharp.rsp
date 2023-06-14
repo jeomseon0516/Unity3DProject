@@ -353,6 +353,7 @@
 "Assets/MyScriptsPack/YieldCache.cs"
 "Assets/Scripts/CustomCollision.cs"
 "Assets/Scripts/Enemy/EnemyController.cs"
+"Assets/Scripts/Matrix.cs"
 "Assets/Scripts/MyClass.cs"
 "Assets/Scripts/Rotation.cs"
 "Assets/Scripts/Target.cs"

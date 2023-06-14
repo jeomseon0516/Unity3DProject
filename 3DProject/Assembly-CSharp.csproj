@@ -70,6 +70,7 @@
     <Compile Include="Assets\Scripts\Enemy\EnemyController.cs" />
     <Compile Include="Assets\MyScriptsPack\YieldCache.cs" />
     <Compile Include="Assets\MyScriptsPack\CustomMath.cs" />
+    <Compile Include="Assets\Scripts\Matrix.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

@@ -5,9 +5,15 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class EnemyController : MonoBehaviour
 {
+    const int T = 1;
+    const int R = 2;
+    const int S = 3;
+    const int M = 0;
+
     public Node Target { get; private set; }
     [field: SerializeField, Range(10, 50)] private float Speed { get; set; } = 10.0f;
     [field: SerializeField, Range(0, 360)] private float Angle { get; set; } = 90;
+    [field: SerializeField, Range(1, 10)] private float Scale { get; set; } = 1;
     [field: SerializeField, Range(2, 360)] private int RayCount { get; set; }
     [field: SerializeField] private Material material { get; set; }
 
@@ -34,6 +40,7 @@ public class EnemyController : MonoBehaviour
 
         isMove = false;
         Angle = 45;
+        Scale = 1;
 
         StartCoroutine(SetRotation());
     }
@@ -48,19 +55,22 @@ public class EnemyController : MonoBehaviour
                 Vector3[] verticesPoint = meshFilter.mesh.vertices;
 
                 for (int i = 0; i < verticesPoint.Length; ++i)
-                    if (!vertices.Contains(verticesPoint[i]) && verticesPoint[i].y < transform.position.y)
-                        vertices.Add(verticesPoint[i]);
-            }
+                {
+                    if (verticesPoint[i].y >= transform.position.y + 0.05f ||
+                        verticesPoint[i].y + 0.05f <= transform.position.y) continue;
 
-            for (int i = 0; i < vertices.Count; ++i)
-            {
-                GameObject obj = new GameObject(i.ToString());
-                obj.transform.position = new Vector3(
-                    vertices[i].x * hit.transform.lossyScale.x,
-                    vertices[i].y,
-                    vertices[i].z * hit.transform.lossyScale.z) + hit.transform.position;
+                    Matrix4x4[] matrix = new Matrix4x4[4];
 
-                // obj.AddComponent<MyGizmo>();
+                    matrix[T] = Matrix.Translate(new Vector3(hit.transform.position.x, 0.0f, hit.transform.position.z));
+                    matrix[R] = Matrix.Rotate(hit.transform.eulerAngles);
+                    matrix[S] = Matrix.Scale(new Vector3(hit.transform.lossyScale.x, 0.0f, hit.transform.lossyScale.z) * Scale);
+                    matrix[M] = matrix[T] * matrix[R] * matrix[S];
+
+                    Vector3 wayPoint = matrix[M].MultiplyPoint(verticesPoint[i]);
+
+                    if (!vertices.Contains(wayPoint))
+                        vertices.Add(wayPoint);
+                }
             }
         }
 
@@ -108,6 +118,15 @@ public class EnemyController : MonoBehaviour
         //transform.position += direction * Speed * Time.deltaTime;
     }
 
+    void OutMatrix(Matrix4x4 m)
+    {
+        Debug.Log("===================================================");
+        Debug.Log(m.m00 + ", " + m.m01 + ", " + m.m02 + ", " + m.m03);
+        Debug.Log(m.m10 + ", " + m.m11 + ", " + m.m12 + ", " + m.m13);
+        Debug.Log(m.m20 + ", " + m.m21 + ", " + m.m22 + ", " + m.m23);
+        Debug.Log(m.m30 + ", " + m.m31 + ", " + m.m32 + ", " + m.m33);
+        Debug.Log("===================================================");
+    }
     IEnumerator SetRotation()
     {
         float time;
@@ -152,6 +171,4 @@ public class EnemyController : MonoBehaviour
 
         isMove = true;
     }
-
-
 }
