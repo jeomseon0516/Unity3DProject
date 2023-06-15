@@ -15,7 +15,7 @@ public class EnemyController : MonoBehaviour
     public Node CurrentNode { get; private set; }
     [field: SerializeField, Range(10, 50)] private float Speed { get; set; } = 10.0f;
     [field: SerializeField, Range(0, 360)] private float Angle { get; set; } = 90;
-    [field: SerializeField, Range(1, 10)] private float Scale { get; set; } = 2;
+    [field: SerializeField, Range(1, 10)] private float Scale { get; set; } = 1.25f;
     [field: SerializeField, Range(2, 360)] private int RayCount { get; set; }
     [field: SerializeField] private List<Vector3> Vertices { get; set; }
 
@@ -36,13 +36,14 @@ public class EnemyController : MonoBehaviour
     {
         RayCount = 5;
 
-        isMove = false;
+        isMove = true;
         Angle = 45;
-        Scale = 1;
+        Scale = 1.25f;
 
         StartCoroutine(SetRotation());
     }
 
+    // .. 코드 정리가 안된다..
     void FindWay()
     {
         if (!Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, Mathf.Infinity) || 
@@ -60,7 +61,6 @@ public class EnemyController : MonoBehaviour
         Node pivotNode = null, endNode = null;
 
         List<Node> openList = new List<Node>(); // .. 다음 노드가 될 수 있는 후보 목록
-        List<Node> findList = new List<Node>(); // .. 다음 노드가 될 수 있는 후보 목록
 
         for (int i = 0; i < verticesPoint.Length; ++i)
         {
@@ -100,7 +100,7 @@ public class EnemyController : MonoBehaviour
                 {
                     if (pivotNode)
                     {
-                        findList.Add(pivotNode);
+                        openList.Add(pivotNode);
                         pivotNode.GetComponent<MyGizmo>().GizmoColor = Color.blue;
                     }
 
@@ -109,7 +109,7 @@ public class EnemyController : MonoBehaviour
                 }
                 else
                 {
-                    findList.Add(node);
+                    openList.Add(node);
                     node.GetComponent<MyGizmo>().GizmoColor = Color.blue;
                 }
 
@@ -120,36 +120,25 @@ public class EnemyController : MonoBehaviour
         if (pivotNode)
             pivotNode.GetComponent<MyGizmo>().GizmoColor = Color.red;
 
-        float distance = 1000000.0f;
-
-        for (int i = 0; i < findList.Count; ++i)
+        if (endNode)
         {
-            float intervalDistance = CustomMath.GetDistance(pivotNode.transform.position.z, openList[i].transform.position.z,
-                                                            pivotNode.transform.position.x, openList[i].transform.position.x);
-
-            bool isCollision = Physics.Raycast(
-                pivotNode.transform.position,
-                (openList[i].transform.position - pivotNode.transform.position).normalized,
-                out RaycastHit checkHit,
-                intervalDistance
-            );
-
-            if (distance >= intervalDistance && !isCollision)
-            {
-                distance = intervalDistance;
-                openList.Add(findList[i]);
-            }
+            endNode.Next = new GameObject("EndNode").AddComponent<Node>();
+            endNode.Next.transform.position = Target.transform.position;
         }
 
-        while (true)
+        // 조건 이동하는 도중에 충돌하는 물체가 없어야하고 이동할때 드는 비용이 가장 적은 노드를 찾기, 해당 노드와 목표로 하는 타겟노드와의 거리가 가장 적은가? 찾기
+        while (!pivotNode.Equals(endNode))
         {
             float distance = 1000000.0f;
+            float startTargetDistance = distance;
+            int index = -1;
 
             for (int i = 0; i < openList.Count; ++i)
             {
-                float intervalDistance = CustomMath.GetDistance(pivotNode.transform.position.z, openList[i].transform.position.z,
+                float intervalDistance = CustomMath.GetDistance(pivotNode.transform.position.z, openList[i].transform.position.z, 
                                                                 pivotNode.transform.position.x, openList[i].transform.position.x);
 
+                // 현재 pivot이 되는 노드가 다음 openList의 노드사이에 무언가 있는지 검사 뭔가 있다면? 해당 노드는 제외
                 bool isCollision = Physics.Raycast(
                     pivotNode.transform.position, 
                     (openList[i].transform.position - pivotNode.transform.position).normalized,
@@ -157,13 +146,38 @@ public class EnemyController : MonoBehaviour
                     intervalDistance
                 );
 
-                if (distance >= intervalDistance && !isCollision)
+                float targetDistance = CustomMath.GetDistance(Target.transform.position.z, openList[i].transform.position.z,
+                                                              Target.transform.position.x, openList[i].transform.position.x);
+
+                if (!isCollision)
                 {
-                    distance = intervalDistance;
-                    openList.Add
+                    if (distance > intervalDistance)
+                    {
+                        distance = intervalDistance;
+                        index = i;
+                    }
+                    else if (distance == intervalDistance && startTargetDistance > targetDistance)
+                    {
+                        startTargetDistance = targetDistance;
+                        index = i;
+                    }
                 }
             }
+
+            if (index >= 0)
+            {
+                pivotNode.Next = openList[index];
+                openList[index].Parent = pivotNode;
+                pivotNode = openList[index];
+                pivotNode.GetComponent<MyGizmo>().GizmoColor = Color.green;
+                openList.Remove(openList[index]);
+            }
         }
+
+        while (pivotNode.Parent)
+            pivotNode = pivotNode.Parent;
+
+        TargetNode = pivotNode;
     }
 
     void Update()
@@ -208,11 +222,7 @@ public class EnemyController : MonoBehaviour
         Vector3 direction = (TargetNode.transform.position - transform.position).normalized;
 
         if (isMove)
-            transform.position = Vector3.Lerp(
-                transform.position,
-                Target.transform.position,
-                0.016f);
-        //transform.position += direction * Speed * Time.deltaTime;
+            transform.position += direction * Speed * Time.deltaTime;
     }
 
     void OutMatrix(Matrix4x4 m)
@@ -227,27 +237,27 @@ public class EnemyController : MonoBehaviour
     IEnumerator SetRotation()
     {
         float time;
-        isMove = false;
+        isMove = true;
 
         int count = Random.Range(2, 4) + 1;
 
-        for (int i = 0; i < count; ++i)
-        {
-            time = 0.0f;
+        //for (int i = 0; i < count; ++i)
+        //{
+        //    time = 0.0f;
 
-            float radian = CustomMath.ConvertFromAngleToRadian(transform.eulerAngles.y + Random.Range(-Angle, Angle));
+        //    float radian = CustomMath.ConvertFromAngleToRadian(transform.eulerAngles.y + Random.Range(-Angle, Angle));
 
-            while (time < 1.0f)
-            {
-                transform.rotation = Quaternion.Lerp(
-                    transform.rotation,
-                    Quaternion.LookRotation(new Vector3(Mathf.Sin(radian), 0.0f, Mathf.Cos(radian))),
-                    0.016f);
+        //    while (time < 1.0f)
+        //    {
+        //        transform.rotation = Quaternion.Lerp(
+        //            transform.rotation,
+        //            Quaternion.LookRotation(new Vector3(Mathf.Sin(radian), 0.0f, Mathf.Cos(radian))),
+        //            0.016f);
 
-                time += Time.deltaTime;
-                yield return null;
-            }
-        }
+        //        time += Time.deltaTime;
+        //        yield return null;
+        //    }
+        //}
 
         time = 0.0f;
 

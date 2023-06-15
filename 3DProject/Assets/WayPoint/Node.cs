@@ -5,12 +5,12 @@ using UnityEngine;
 [RequireComponent(typeof(SphereCollider))]
 public class Node : MonoBehaviour
 {
-    [field:SerializeField]
-    public Node Next { get; set; }
-    public Node Parent { get; set; }
+    [field: SerializeField] public Node Next { get; set; }
+    [field: SerializeField] public Node Parent { get; set; }
     public float Cost { get; set; }
     private void Awake()
     {
+        Next = null;
         Parent = null;
         GetComponent<SphereCollider>().isTrigger = true;
     }
