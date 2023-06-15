@@ -14,6 +14,13 @@ static public class CustomMath
 
         return Mathf.Sqrt(x * x + y * y);
     }
+    public static float GetDistance(float p1X, float p2X, float p1Y, float p2Y)
+    {
+        float x = p1X - p2X;
+        float y = p1Y - p2Y;
+
+        return Mathf.Sqrt(x * x + y * y);
+    }
     public static Vector2 GetFromPostionToDirection(Vector2 p1, Vector2 p2)
     {
         float radian = GetFromPositionToRadian(p1, p2);

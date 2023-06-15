@@ -355,6 +355,7 @@
 "Assets/Scripts/Enemy/EnemyController.cs"
 "Assets/Scripts/Matrix.cs"
 "Assets/Scripts/MyClass.cs"
+"Assets/Scripts/MyGizmo.cs"
 "Assets/Scripts/Rotation.cs"
 "Assets/Scripts/Target.cs"
 "Assets/WayPoint/Editors/WayPoint.cs"

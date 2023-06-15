@@ -7,16 +7,15 @@ public class Node : MonoBehaviour
 {
     [field:SerializeField]
     public Node Next { get; set; }
+    public Node Parent { get; set; }
+    public float Cost { get; set; }
     private void Awake()
     {
+        Parent = null;
         GetComponent<SphereCollider>().isTrigger = true;
     }
-    void Start()
+    private void Start()
     {
-    }
-    
-    void Update()
-    {
-        
+        Cost = 0.0f;
     }
 }
