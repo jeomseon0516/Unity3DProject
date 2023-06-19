@@ -28,15 +28,13 @@ public partial class EnemyController : MonoBehaviour
 
         isMove = true;
         Angle = 45;
-        Scale = 1.25f;
-
-        StartCoroutine(SetRotation());
+        Scale = 1.45f;
     }
 
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Return))
-            FindWay();
+            findWay();
 
         Move();
     }
@@ -60,15 +58,7 @@ public partial class EnemyController : MonoBehaviour
             }
         }
     }
-    private void OnTriggerEnter(Collider other)
-    {
-        if (ReferenceEquals(TargetNode.gameObject, other.gameObject))
-        {
-            StartCoroutine(SetRotation());
-            if (TargetNode.Next)
-                TargetNode = TargetNode.Next;
-        }
-    }
+   
     void Move()
     {
         if (!TargetNode) return;
@@ -77,6 +67,15 @@ public partial class EnemyController : MonoBehaviour
 
         if (isMove)
             transform.position += direction * Speed * Time.deltaTime;
+
+        float distance = CustomMath.GetDistance(TargetNode.transform.position.z, transform.position.z, 
+                                                TargetNode.transform.position.x, transform.position.x);
+
+        if (distance < 0.1f)
+        {
+            StartCoroutine(SetRotation());
+            TargetNode = TargetNode.Next ?? TargetNode;
+        }
     }
 
     IEnumerator SetRotation()
@@ -136,192 +135,148 @@ public partial class EnemyController : MonoBehaviour
 
     delegate void pathFindingMethod(List<Node> openList, Node node, ref Node pivotNode, ref Node endNode, 
         ref float pivotDistance, ref float endDistance, float targetDistance, float distance);
-    [field: SerializeField, Range(1, 10)] private float Scale { get; set; } = 1.25f;
+    [field: SerializeField, Range(1, 10)] private float Scale { get; set; }
     [field: SerializeField, Range(2, 360)] private int RayCount { get; set; }
     [field: SerializeField] private List<Vector3> Vertices { get; set; }
     [field: SerializeField] public GameObject Target { get; private set; }
     public Node TargetNode { get; private set; }
-    public Node CurrentNode { get; private set; }
 
-    // .. pivotNode, EndNode, openList ..
-
-    void InitPathFinding(List<Node> openList, Node node, ref Node pivotNode, ref Node endNode,
-        ref float pivotDistance, ref float endDistance, float targetDistance, float distance)
-    {
-        if (endDistance > targetDistance)
-        {
-            endNode = node;
-            endDistance = targetDistance;
-        }
-
-        if (pivotDistance > distance)
-        {
-            if (pivotNode)
-            {
-                openList.Add(pivotNode);
-                pivotNode.GetComponent<MyGizmo>().GizmoColor = Color.blue;
-            }
-
-            pivotNode = node;
-            pivotDistance = distance;
-        }
-        else
-        {
-            openList.Add(node);
-            node.GetComponent<MyGizmo>().GizmoColor = Color.blue;
-        }
-    }
-    Tuple<Node, Node, List<Node>> SettingPathFinding(GameObject obj, pathFindingMethod action)
-    {
-        // .. 어떤 노드가 나랑 가장 가까운지 찾아주는
-        float pivotDistance = Mathf.Infinity, endDistance = Mathf.Infinity;
-
-        Node pivotNode = null, endNode = null; // .. 피봇 노드는 현재 기준이 되는 노드 피봇 노드를 기준으로 코스트를 계산하여 최적의 노드를 찾고 해당 노드는 다음 pivotNode가 된다.
-
-        List<Node> openList = new List<Node>(); // .. 다음 pivot 노드가 될 수 있는 후보 목록
-
-        foreach (Vector3 vertex in GetVertices(obj))
-        {
-            if (vertex.y >= transform.position.y + 0.05f ||
-                vertex.y + 0.05f <= transform.position.y) continue;
-
-            Vector3 wayPoint = ConvertFromVertexToVector(obj, vertex, Scale);
-
-            if (!Vertices.Contains(wayPoint))
-            {
-                Node node = new GameObject("Node_" + Vertices.Count.ToString()).AddComponent<Node>();
-
-                node.gameObject.AddComponent<MyGizmo>();
-                node.transform.position = wayPoint;
-
-                float distance = CustomMath.GetDistance(node.transform.position.z, transform.position.z,
-                                                        node.transform.position.x, transform.position.x);
-
-                float targetDistance = CustomMath.GetDistance(node.transform.position.z, Target.transform.position.z,
-                                                              node.transform.position.x, Target.transform.position.x);
-
-                // .. 딜리게이트 사용해야 할듯 중간에 장애물을 만나면 다시 버텍스를 구해와야하는데 endNode와 startNode는 변하지 않기 때문
-                action(openList, node, ref pivotNode, ref endNode, ref pivotDistance, ref endDistance, targetDistance, distance);
-                Vertices.Add(wayPoint);
-            }
-        }
-
-        return new Tuple<Node, Node, List<Node>>(pivotNode, endNode, openList);
-    }
-
-    void FindWay()
+    private void findWay()
     {
         if (!Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, Mathf.Infinity) ||
             hit.transform.name.Contains("Node_") ||
             !Target) return;
 
         Vertices.Clear();
+        Vertices.AddRange(convertFromVerticesToNode(hit.transform.gameObject, Vertices, getVertices(hit.transform.gameObject)));
 
-        // .. 어떤 노드가 가장 가까운지 찾아주는
-        Tuple<Node, Node, List<Node>> tuple = SettingPathFinding(hit.transform.gameObject, InitPathFinding);
+        List<Node> openList = makeNodes(Vertices, 0);
 
-        Node pivotNode = tuple.Item1, endNode = tuple.Item2;
-        Node startNode = pivotNode;
-
-        List<Node> openList = tuple.Item3;
         List<GameObject> colList = new List<GameObject>();
-
         colList.Add(hit.transform.gameObject);
 
-        if (pivotNode)
-            pivotNode.GetComponent<MyGizmo>().GizmoColor = Color.red;
+        Node startNode = new GameObject("StartNode").AddComponent<Node>();
+        Node endNode   = new GameObject("EndNode").AddComponent<Node>();
+        Node pivotNode = startNode, shortNode = startNode;
 
-        if (endNode)
+        startNode.GetComponent<MyGizmo>().GizmoColor = Color.red;
+        startNode.transform.position = transform.position;
+
+        endNode.GetComponent<MyGizmo>().GizmoColor = Color.cyan;
+        endNode.transform.position = Target.transform.position;
+
+        TargetNode = pathFindingNodes(openList, new List<Node>(openList), startNode, shortNode, pivotNode, endNode, colList);
+    }
+    private List<Node> makeNodes(List<Vector3> vertices, int count)
+    {
+        List<Node> nodes = new List<Node>();
+
+        foreach (Vector3 vertex in vertices)
         {
-            endNode.Next = new GameObject("EndNode").AddComponent<Node>();
-            endNode.Next.transform.position = Target.transform.position;
+            Node node = new GameObject("Node_" + (nodes.Count + count).ToString()).AddComponent<Node>();
+
+            node.transform.position = vertex;
+            nodes.Add(node);
         }
 
-        TargetNode = PathFindingNodes(openList, new List<Node>(openList), startNode, pivotNode, endNode, colList);
+        return nodes;
     }
 
-    // 노드의 길을 찾은 후 StartNode 반환
-    Node PathFindingNodes(List<Node> oldList, List<Node> openList, Node startNode, Node pivotNode, Node endNode, List<GameObject> colList)
+    // 노드의 길을 찾은 후 StartNode 반환 재귀적으로 동작
+    private Node pathFindingNodes(List<Node> oldList, List<Node> openList, Node startNode, Node shortNode, Node pivotNode, Node endNode, List<GameObject> colList)
     {
         float distance = Mathf.Infinity;
-        float startTargetDistance = distance;
         int index = -1;
 
         for (int i = 0; i < openList.Count; ++i)
         {
+            if (pivotNode.Equals(openList[i])) continue;
+
             float intervalDistance = CustomMath.GetDistance(pivotNode.transform.position.z, openList[i].transform.position.z,
                                                             pivotNode.transform.position.x, openList[i].transform.position.x);
 
-            // .. 현재 pivot이 되는 노드가 검사할 openList의 노드사이에 무언가 있는지 검사 뭔가 있다면? 해당 노드는 제외
-            bool isCollision = Physics.Raycast(
-                    pivotNode.transform.position,
-                    (openList[i].transform.position - pivotNode.transform.position).normalized,
-                    out RaycastHit checkHit,
-                    intervalDistance
-                );
-
-            if (isCollision)
+            if (checkNextNodeCollision(colList, out RaycastHit checkHit, pivotNode, openList[i], intervalDistance))
             {
-                if (!checkHit.transform.name.Contains("Node_") && !colList.Contains(checkHit.transform.gameObject))
-                {
-                    Tuple<Node, Node, List<Node>> tuple = SettingPathFinding(checkHit.transform.gameObject,
-                        (List<Node> checkList, Node node, ref Node pivotNode, ref Node endNode,
-                         ref float pivotDistance, ref float endDistance, float targetDistance, float distance) =>
-                        {
-                            checkList.Add(node);
-                            node.GetComponent<MyGizmo>().GizmoColor = Color.blue;
-                        });
+                if (colList.Contains(checkHit.transform.gameObject)) continue;
 
-                    colList.Add(checkHit.transform.gameObject);
+                List<Vector3> newVertices = convertFromVerticesToNode(checkHit.transform.gameObject, Vertices, getVertices(checkHit.transform.gameObject));
+                Vertices.AddRange(newVertices);
 
-                    oldList.AddRange(tuple.Item3);
-                    openList.Clear();
-                    openList.AddRange(oldList);
+                openList.Clear();
+                oldList.AddRange(makeNodes(newVertices, oldList.Count));
+                openList.AddRange(oldList);
 
-                    print(openList.Count);
-                    index = -1;
-                    pivotNode = startNode;
+                pivotNode = startNode;
+                shortNode = startNode;
 
-                    break;
-                }
-                else
-                    continue;
+                index = -1;
+
+                colList.Add(checkHit.transform.gameObject);
+
+                break;
             }
-
-            float targetDistance = CustomMath.GetDistance(Target.transform.position.z, openList[i].transform.position.z,
-                                                          Target.transform.position.x, openList[i].transform.position.x);
 
             if (distance > intervalDistance)
             {
                 distance = intervalDistance;
                 index = i;
             }
-            else if (distance == intervalDistance && startTargetDistance > targetDistance)
-            {
-                startTargetDistance = targetDistance;
-                index = i;
-            }
-        }
+         }
 
         if (index >= 0)
         {
             pivotNode.Next = openList[index];
-            openList[index].Parent = pivotNode;
+            openList[index].Cost = pivotNode.Cost + distance;
             pivotNode = openList[index];
+
+            // .. 피벗노드와 숏노드의 거리를 구한다.
+            float shortDistance = CustomMath.GetDistance(pivotNode.transform.position.z, shortNode.transform.position.z,
+                                                         pivotNode.transform.position.x, shortNode.transform.position.x);
+
+            // .. 중간에 충돌하는 오브젝트가 있는지 확인한다. 충돌하는 오브젝트가 있다면 shortNode를 갱신한다.
+            if (Physics.Raycast(shortNode.transform.position,
+               (pivotNode.transform.position - shortNode.transform.position).normalized,
+                out RaycastHit hit, shortDistance) && !hit.transform.name.Contains("Node"))
+                shortNode = pivotNode;
+            else
+            {
+                if (shortDistance < pivotNode.Cost - shortNode.Cost)
+                    shortNode.Next = pivotNode;
+            }
+
             pivotNode.GetComponent<MyGizmo>().GizmoColor = Color.green;
             openList.Remove(openList[index]);
         }
 
-        if (!pivotNode.Equals(endNode))
-            PathFindingNodes(oldList, openList, startNode, pivotNode, endNode, colList);
+        float targetDistance = CustomMath.GetDistance(pivotNode.transform.position.z, endNode.transform.position.z, 
+                                                      pivotNode.transform.position.x, endNode.transform.position.x);
 
-        while (pivotNode.Parent)
-            pivotNode = pivotNode.Parent;
+        bool condition = Physics.Raycast(pivotNode.transform.position, (endNode.transform.position - pivotNode.transform.position).normalized,
+            out RaycastHit endHit,
+            targetDistance);
 
-        return pivotNode;
+        if (condition && !endHit.transform.name.Contains("Node") && !endHit.transform.name.Contains(Target.transform.name))
+            pathFindingNodes(oldList, openList, startNode, shortNode, pivotNode, endNode, colList);
+        else
+            pivotNode.Next = endNode;
+
+        return startNode;
+    }
+    private bool checkNextNodeCollision(List<GameObject> colList, out RaycastHit hit, Node pivotNode, Node checkNode, float distance)
+    {
+        // .. 현재 pivot이 되는 노드가 검사할 openList의 노드사이에 무언가 있는지 검사 뭔가 있다면? 해당 노드는 제외
+        bool isCollision = Physics.Raycast(
+                pivotNode.transform.position,
+                (checkNode.transform.position - pivotNode.transform.position).normalized,
+                out hit,
+                distance
+            );
+        // .. 진행동선중에 노드가 아닌 충돌체가 존재한다면?
+        return isCollision && !hit.transform.name.Contains("Node");
     }
 
-    Vector3 ConvertFromVertexToVector(GameObject obj, Vector3 vertexPoint, float scale)
+    // 메쉬에서 받아온 Vertex를 행렬을 이용하여 오브젝트 사이즈로 변환
+    private Vector3 convertFromVertexToVector(GameObject obj, Vector3 vertexPoint, float scale)
     {
         Matrix4x4[] matrix = new Matrix4x4[4];
 
@@ -332,14 +287,31 @@ public partial class EnemyController : MonoBehaviour
 
         return matrix[M].MultiplyPoint(vertexPoint);
     }
+    // 메쉬에서 받아온 Vertices를 오브젝트 사이즈로 변환 
+    private List<Vector3> convertFromVerticesToNode(GameObject obj, List<Vector3> vertices, List<Vector3> origin)
+    {
+        List<Vector3> newVertices = new List<Vector3>();
 
-    List<Vector3> GetVertices(GameObject hitObject)
+        foreach (Vector3 vertex in origin)
+        {
+            if (vertex.y <= 0.0f) continue;
+
+            Vector3 wayPoint = convertFromVertexToVector(obj, vertex, Scale);
+
+            if (!vertices.Contains(wayPoint) && !newVertices.Contains(wayPoint))
+                newVertices.Add(wayPoint);
+        }
+
+        return newVertices;
+    }
+
+    // 특정 오브젝트의 하위 오브젝트에 있는 모든 메쉬를 받아오는 함수
+    private List<Vector3> getVertices(GameObject hitObject)
     {
         List<Vector3> vertexList = new List<Vector3>();
 
-        if (hitObject.transform.childCount != 0)
-            for (int i = 0; i < hitObject.transform.childCount; ++i)
-                vertexList.AddRange(GetVertices(hitObject.transform.GetChild(i).gameObject));
+        for (int i = 0; i < hitObject.transform.childCount; ++i)
+            vertexList.AddRange(getVertices(hitObject.transform.GetChild(i).gameObject));
 
         if (!hitObject.transform.gameObject.TryGetComponent(out MeshFilter meshFilter))
             return vertexList;
@@ -348,7 +320,8 @@ public partial class EnemyController : MonoBehaviour
 
         return vertexList;
     }
-    void OutMatrix(Matrix4x4 m)
+    // Debug
+    private void outMatrix(Matrix4x4 m)
     {
         Debug.Log("===================================================");
         Debug.Log(m.m00 + ", " + m.m01 + ", " + m.m02 + ", " + m.m03);

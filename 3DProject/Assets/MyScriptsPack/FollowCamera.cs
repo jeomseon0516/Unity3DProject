@@ -18,7 +18,6 @@ public class FollowCamera : MonoBehaviour
 
     private void Start()
     {
-        // TargetObject = PlayerManager.GetInstance().GetInHierarchyPlayer();
 ;       _moveCameraMethod = WaitingPlayGame;
         _floor = transform.position.y + Camera.main.orthographicSize * 0.5f;
         _offsetY = transform.position.y;

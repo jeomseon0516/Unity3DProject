@@ -8,7 +8,7 @@ public class MyGizmo : MonoBehaviour
 
     private void Awake()
     {
-        GizmoColor = Color.green;
+        GizmoColor = Color.blue;
     }
     private void OnDrawGizmos()
     {

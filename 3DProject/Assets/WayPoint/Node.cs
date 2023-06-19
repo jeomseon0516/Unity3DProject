@@ -2,20 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(SphereCollider))]
+[RequireComponent(typeof(MyGizmo))]
 public class Node : MonoBehaviour
 {
     [field: SerializeField] public Node Next { get; set; }
-    [field: SerializeField] public Node Parent { get; set; }
-    public float Cost { get; set; }
+    [field: SerializeField] public float Cost { get; set; }
+    [field: SerializeField] public bool IsShort { get; set; }
     private void Awake()
     {
-        Next = null;
-        Parent = null;
-        GetComponent<SphereCollider>().isTrigger = true;
-    }
-    private void Start()
-    {
+        IsShort = false;
         Cost = 0.0f;
+        Next = null;
     }
 }
