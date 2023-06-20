@@ -72,12 +72,41 @@
     <Compile Include="Assets\MyScriptsPack\YieldCache.cs" />
     <Compile Include="Assets\Scripts\MyGizmo.cs" />
     <Compile Include="Assets\MyScriptsPack\CustomMath.cs" />
+    <Compile Include="Assets\Visual Design Cafe\Nature Renderer Demo\Scripts\CompileShaders.cs" />
+    <Compile Include="Assets\Visual Design Cafe\Nature Renderer Demo\Scripts\RenderPipelineLighting.cs" />
+    <Compile Include="Assets\Visual Design Cafe\Nature Renderer Demo\Scripts\OpenWebsiteButton.cs" />
+    <Compile Include="Assets\Visual Design Cafe\Nature Renderer\Runtime\NatureRenderer.SRP.cs" />
+    <Compile Include="Assets\Visual Design Cafe\Nature Renderer Demo\Scripts\UseReferenceCamera.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\Visual Design Cafe\ShaderX\Templates\Common\Platforms\GLES3.hlsl" />
+    <None Include="Assets\Visual Design Cafe\Nature Renderer\Plugins\VisualDesignCafe.Rendering.Nature.dll" />
+    <None Include="Assets\Visual Design Cafe\ShaderX\Templates\Common\Platforms\Vulkan.hlsl" />
     <None Include="Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.Web.dll" />
+    <None Include="Assets\Visual Design Cafe\Nature Renderer Demo\Realistic\Third-Party Notices.txt" />
+    <None Include="Assets\Visual Design Cafe\Nature Shaders\Common\Nodes\Integrations\Nature Renderer.cginc" />
+    <None Include="Assets\Visual Design Cafe\Nature Renderer\Resources\Nature Renderer Batcher.compute" />
+    <None Include="Assets\Visual Design Cafe\ShaderX\Templates\Common\Platforms\XBoxOne.hlsl" />
     <None Include="Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Packages.dll" />
+    <None Include="Assets\Visual Design Cafe\Nature Renderer\Plugins\VisualDesignCafe.Rendering.Nature.Editor.dll" />
+    <None Include="Assets\Visual Design Cafe\ShaderX\Plugins\VisualDesignCafe.ShaderX.dll" />
+    <None Include="Assets\Visual Design Cafe\Nature Renderer\Plugins\VisualDesignCafe.Rendering.Instancing.Editor.dll" />
+    <None Include="Assets\Visual Design Cafe\ShaderX\Templates\Common\Platforms\Metal.hlsl" />
     <None Include="Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.Community.dll" />
+    <None Include="Assets\Visual Design Cafe\Nature Renderer\Resources\Nature Renderer VR.compute" />
+    <None Include="Assets\Visual Design Cafe\ShaderX\Plugins\VisualDesignCafe.Editor.ShaderX.dll" />
+    <None Include="Assets\Visual Design Cafe\Nature Renderer\Plugins\VisualDesignCafe.Memory.dll" />
+    <None Include="Assets\Visual Design Cafe\Nature Renderer\Resources\Nature Renderer Instancing.compute" />
+    <None Include="Assets\Visual Design Cafe\ShaderX\Templates\Common\Platforms\GLCore.hlsl" />
+    <None Include="Assets\Visual Design Cafe\ShaderX\Templates\Common\Platforms\Switch.hlsl" />
+    <None Include="Assets\Visual Design Cafe\ShaderX\Templates\Common\Platforms\GLES2.hlsl" />
     <None Include="Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.PackageManager.dll" />
+    <None Include="Assets\Visual Design Cafe\Nature Shaders\Plugins\VisualDesignCafe.Nature.Editor.dll" />
+    <None Include="Assets\Visual Design Cafe\ShaderX\Plugins\VisualDesignCafe.ShaderX.Editor.dll" />
+    <None Include="Assets\Visual Design Cafe\ShaderX\Templates\Common\Platforms\D3D11.hlsl" />
+    <None Include="Assets\Visual Design Cafe\Nature Shaders\Plugins\VisualDesignCafe.Nature.dll" />
+    <None Include="Assets\Visual Design Cafe\ShaderX\Templates\Common\Platforms\PSSL.hlsl" />
+    <None Include="Assets\Visual Design Cafe\Nature Renderer\Plugins\VisualDesignCafe.Rendering.Instancing.dll" />
     <None Include="Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.Events.dll" />
   </ItemGroup>
   <ItemGroup>
@@ -327,12 +356,6 @@
     <Reference Include="UnityEditor.UnityConnectModule">
       <HintPath>C:\Program Files\Unity\Hub\Editor\2021.3.22f1\Editor\Data\Managed\UnityEngine\UnityEditor.UnityConnectModule.dll</HintPath>
     </Reference>
-    <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
-      <HintPath>Library\PackageCache\com.unity.visualscripting@1.8.0\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
-    </Reference>
-    <Reference Include="ReportGeneratorMerged">
-      <HintPath>Library\PackageCache\com.unity.testtools.codecoverage@1.2.2\lib\ReportGenerator\ReportGeneratorMerged.dll</HintPath>
-    </Reference>
     <Reference Include="VisualDesignCafe.Packages">
       <HintPath>Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Packages.dll</HintPath>
     </Reference>
@@ -342,11 +365,47 @@
     <Reference Include="VisualDesignCafe.Editor.PackageManager">
       <HintPath>Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.PackageManager.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
+      <HintPath>Library\PackageCache\com.unity.visualscripting@1.8.0\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
+    </Reference>
     <Reference Include="VisualDesignCafe.Editor.Community">
       <HintPath>Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.Community.dll</HintPath>
     </Reference>
+    <Reference Include="ReportGeneratorMerged">
+      <HintPath>Library\PackageCache\com.unity.testtools.codecoverage@1.2.2\lib\ReportGenerator\ReportGeneratorMerged.dll</HintPath>
+    </Reference>
     <Reference Include="VisualDesignCafe.Editor.Web">
       <HintPath>Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.Nature">
+      <HintPath>Assets\Visual Design Cafe\Nature Shaders\Plugins\VisualDesignCafe.Nature.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.ShaderX">
+      <HintPath>Assets\Visual Design Cafe\ShaderX\Plugins\VisualDesignCafe.ShaderX.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.ShaderX.Editor">
+      <HintPath>Assets\Visual Design Cafe\ShaderX\Plugins\VisualDesignCafe.ShaderX.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.Editor.ShaderX">
+      <HintPath>Assets\Visual Design Cafe\ShaderX\Plugins\VisualDesignCafe.Editor.ShaderX.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.Nature.Editor">
+      <HintPath>Assets\Visual Design Cafe\Nature Shaders\Plugins\VisualDesignCafe.Nature.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.Rendering.Nature">
+      <HintPath>Assets\Visual Design Cafe\Nature Renderer\Plugins\VisualDesignCafe.Rendering.Nature.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.Rendering.Instancing.Editor">
+      <HintPath>Assets\Visual Design Cafe\Nature Renderer\Plugins\VisualDesignCafe.Rendering.Instancing.Editor.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.Memory">
+      <HintPath>Assets\Visual Design Cafe\Nature Renderer\Plugins\VisualDesignCafe.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.Rendering.Instancing">
+      <HintPath>Assets\Visual Design Cafe\Nature Renderer\Plugins\VisualDesignCafe.Rendering.Instancing.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.Rendering.Nature.Editor">
+      <HintPath>Assets\Visual Design Cafe\Nature Renderer\Plugins\VisualDesignCafe.Rendering.Nature.Editor.dll</HintPath>
     </Reference>
     <Reference Include="netstandard">
       <HintPath>C:\Program Files\Unity\Hub\Editor\2021.3.22f1\Editor\Data\NetStandard\ref\2.1.0\netstandard.dll</HintPath>
