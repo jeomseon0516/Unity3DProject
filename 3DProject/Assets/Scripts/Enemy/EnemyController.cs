@@ -181,7 +181,6 @@ public partial class EnemyController : MonoBehaviour
 
         return nodes;
     }
-
     // 노드의 길을 찾은 후 StartNode 반환 재귀적으로 동작
     private Node pathFindingNodes(List<Node> oldList, List<Node> openList, Node startNode, Node shortNode, Node pivotNode, Node endNode, List<GameObject> colList)
     {
