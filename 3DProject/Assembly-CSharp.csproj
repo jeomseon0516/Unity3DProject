@@ -74,6 +74,13 @@
     <Compile Include="Assets\MyScriptsPack\CustomMath.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.Web.dll" />
+    <None Include="Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Packages.dll" />
+    <None Include="Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.Community.dll" />
+    <None Include="Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.PackageManager.dll" />
+    <None Include="Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.Events.dll" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="UnityEngine">
       <HintPath>C:\Program Files\Unity\Hub\Editor\2021.3.22f1\Editor\Data\Managed\UnityEngine\UnityEngine.dll</HintPath>
     </Reference>
@@ -325,6 +332,21 @@
     </Reference>
     <Reference Include="ReportGeneratorMerged">
       <HintPath>Library\PackageCache\com.unity.testtools.codecoverage@1.2.2\lib\ReportGenerator\ReportGeneratorMerged.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.Packages">
+      <HintPath>Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Packages.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.Editor.Events">
+      <HintPath>Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.Events.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.Editor.PackageManager">
+      <HintPath>Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.PackageManager.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.Editor.Community">
+      <HintPath>Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.Community.dll</HintPath>
+    </Reference>
+    <Reference Include="VisualDesignCafe.Editor.Web">
+      <HintPath>Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Editor.Web.dll</HintPath>
     </Reference>
     <Reference Include="netstandard">
       <HintPath>C:\Program Files\Unity\Hub\Editor\2021.3.22f1\Editor\Data\NetStandard\ref\2.1.0\netstandard.dll</HintPath>
