@@ -6,10 +6,10 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public partial class EnemyController : MonoBehaviour
 {
-    [field: SerializeField, Range(10, 50)] private float Speed { get; set; } = 10.0f;
-    [field: SerializeField, Range(0, 360)] private float Angle { get; set; } = 90;
+    [SerializeField, Range(10, 50)] private float _speed;
+    [SerializeField, Range(0, 360)] private float _angle;
 
-    private bool isMove;
+    private bool _isMove;
 
     private void Awake()
     {
@@ -24,11 +24,11 @@ public partial class EnemyController : MonoBehaviour
     }
     void Start()
     {
-        RayCount = 5;
+        _rayCount = 5;
 
-        isMove = true;
-        Angle = 45;
-        Scale = 1.45f;
+        _isMove = true;
+        _angle = 45;
+        _scale = 1.45f;
     }
 
     void Update()
@@ -36,15 +36,15 @@ public partial class EnemyController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Return))
             findWay();
 
-        Move();
+        move();
     }
     private void FixedUpdate()
     {
         float pivotRadian = CustomMath.ConvertFromAngleToRadian(transform.eulerAngles.y);
-        float intervalAngle = Angle / RayCount;
-        float radian = -(CustomMath.ConvertFromAngleToRadian(RayCount * 0.5f * intervalAngle));
+        float intervalAngle = _angle / _rayCount;
+        float radian = -(CustomMath.ConvertFromAngleToRadian(_rayCount * 0.5f * intervalAngle));
 
-        for (int i = 0; i < RayCount + 1; ++i)
+        for (int i = 0; i < _rayCount + 1; ++i)
         {
             float calcRadian = pivotRadian + radian;
             radian += CustomMath.ConvertFromAngleToRadian(intervalAngle);
@@ -58,17 +58,17 @@ public partial class EnemyController : MonoBehaviour
             }
         }
     }
-   
-    void Move()
+
+    private void move()
     {
         if (!TargetNode) return;
 
         Vector3 direction = (TargetNode.transform.position - transform.position).normalized;
 
-        if (isMove)
-            transform.position += direction * Speed * Time.deltaTime;
+        if (_isMove)
+            transform.position += direction * _speed * Time.deltaTime;
 
-        float distance = CustomMath.GetDistance(TargetNode.transform.position.z, transform.position.z, 
+        float distance = CustomMath.GetDistance(TargetNode.transform.position.z, transform.position.z,
                                                 TargetNode.transform.position.x, transform.position.x);
 
         if (distance < 0.1f)
@@ -81,7 +81,7 @@ public partial class EnemyController : MonoBehaviour
     IEnumerator SetRotation()
     {
         float time;
-        isMove = true;
+        _isMove = true;
 
         int count = UnityEngine.Random.Range(2, 4) + 1;
 
@@ -121,7 +121,7 @@ public partial class EnemyController : MonoBehaviour
             yield return null;
         }
 
-        isMove = true;
+        _isMove = true;
     }
 }
 
@@ -133,11 +133,11 @@ public partial class EnemyController : MonoBehaviour
     const int S = 3;
     const int M = 0;
 
-    delegate void pathFindingMethod(List<Node> openList, Node node, ref Node pivotNode, ref Node endNode, 
+    delegate void pathFindingMethod(List<Node> openList, Node node, ref Node pivotNode, ref Node endNode,
         ref float pivotDistance, ref float endDistance, float targetDistance, float distance);
-    [field: SerializeField, Range(1, 10)] private float Scale { get; set; }
-    [field: SerializeField, Range(2, 360)] private int RayCount { get; set; }
-    [field: SerializeField] private List<Vector3> Vertices { get; set; }
+    [SerializeField, Range(1, 10)] private float _scale;
+    [SerializeField, Range(2, 360)] private int _rayCount;
+    [SerializeField] private List<Vector3> _vertices;
     [field: SerializeField] public GameObject Target { get; private set; }
     public Node TargetNode { get; private set; }
 
@@ -147,16 +147,16 @@ public partial class EnemyController : MonoBehaviour
             hit.transform.name.Contains("Node_") ||
             !Target) return;
 
-        Vertices.Clear();
-        Vertices.AddRange(convertFromVerticesToNode(hit.transform.gameObject, Vertices, getVertices(hit.transform.gameObject)));
+        _vertices.Clear();
+        _vertices.AddRange(convertFromVerticesToNode(hit.transform.gameObject, _vertices, getVertices(hit.transform.gameObject)));
 
-        List<Node> openList = makeNodes(Vertices, 0);
+        List<Node> openList = makeNodes(_vertices, 0);
 
         List<GameObject> colList = new List<GameObject>();
         colList.Add(hit.transform.gameObject);
 
         Node startNode = new GameObject("StartNode").AddComponent<Node>();
-        Node endNode   = new GameObject("EndNode").AddComponent<Node>();
+        Node endNode = new GameObject("EndNode").AddComponent<Node>();
         Node pivotNode = startNode, shortNode = startNode;
 
         startNode.GetComponent<MyGizmo>().GizmoColor = Color.red;
@@ -198,8 +198,8 @@ public partial class EnemyController : MonoBehaviour
             {
                 if (colList.Contains(checkHit.transform.gameObject)) continue;
 
-                List<Vector3> newVertices = convertFromVerticesToNode(checkHit.transform.gameObject, Vertices, getVertices(checkHit.transform.gameObject));
-                Vertices.AddRange(newVertices);
+                List<Vector3> newVertices = convertFromVerticesToNode(checkHit.transform.gameObject, _vertices, getVertices(checkHit.transform.gameObject));
+                _vertices.AddRange(newVertices);
 
                 openList.Clear();
                 oldList.AddRange(makeNodes(newVertices, oldList.Count));
@@ -220,7 +220,7 @@ public partial class EnemyController : MonoBehaviour
                 distance = intervalDistance;
                 index = i;
             }
-         }
+        }
 
         if (index >= 0)
         {
@@ -236,18 +236,22 @@ public partial class EnemyController : MonoBehaviour
             if (Physics.Raycast(shortNode.transform.position,
                (pivotNode.transform.position - shortNode.transform.position).normalized,
                 out RaycastHit hit, shortDistance) && !hit.transform.name.Contains("Node"))
+            {
                 shortNode = pivotNode;
+            }
             else
             {
                 if (shortDistance < pivotNode.Cost - shortNode.Cost)
+                {
                     shortNode.Next = pivotNode;
+                }
             }
 
             pivotNode.GetComponent<MyGizmo>().GizmoColor = Color.green;
             openList.Remove(openList[index]);
         }
 
-        float targetDistance = CustomMath.GetDistance(pivotNode.transform.position.z, endNode.transform.position.z, 
+        float targetDistance = CustomMath.GetDistance(pivotNode.transform.position.z, endNode.transform.position.z,
                                                       pivotNode.transform.position.x, endNode.transform.position.x);
 
         bool condition = Physics.Raycast(pivotNode.transform.position, (endNode.transform.position - pivotNode.transform.position).normalized,
@@ -295,7 +299,7 @@ public partial class EnemyController : MonoBehaviour
         {
             if (vertex.y <= 0.0f) continue;
 
-            Vector3 wayPoint = convertFromVertexToVector(obj, vertex, Scale);
+            Vector3 wayPoint = convertFromVertexToVector(obj, vertex, _scale);
 
             if (!vertices.Contains(wayPoint) && !newVertices.Contains(wayPoint))
                 newVertices.Add(wayPoint);
