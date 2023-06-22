@@ -25,9 +25,7 @@ public class CameraController : MonoBehaviour
     {
         if (ReferenceEquals(TargetObject, null) || !TargetObject) return;
 
-        Quaternion rotation = Quaternion.Euler(_cameraAngle[Y], _cameraAngle[X], 0.0f);
-
-        Vector3 cameraDirection = rotation * Vector3.forward;
+        Vector3 cameraDirection = Quaternion.Euler(_cameraAngle[Y], _cameraAngle[X], 0.0f) * Vector3.forward;
         Vector3 targetDirection = ((TargetObject.transform.position + _lookOffset) - transform.position).normalized;
 
         Vector3 targetPosition = TargetObject.transform.position + _offset + cameraDirection * _maxDistance;

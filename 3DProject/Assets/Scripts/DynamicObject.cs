@@ -30,7 +30,7 @@ public abstract class DynamicObject : MonoBehaviour
         float max = Mathf.Max(Mathf.Abs(Direction.x), Mathf.Abs(Direction.z));
         transform.position += transform.forward * _speed * max * Time.deltaTime;
     }
-    protected abstract void CustomAwake();
     protected abstract void Init();
+    protected abstract void CustomAwake();
     protected abstract void CustomUpdate();
 }
