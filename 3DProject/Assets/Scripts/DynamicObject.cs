@@ -25,7 +25,7 @@ public abstract class DynamicObject : MonoBehaviour
     {
         CustomUpdate();
 
-        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(LookAt), 10.0f * Time.deltaTime);
+        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(LookAt), 20.0f * Time.deltaTime);
 
         float max = Mathf.Max(Mathf.Abs(Direction.x), Mathf.Abs(Direction.z));
         transform.position += transform.forward * _speed * max * Time.deltaTime;
