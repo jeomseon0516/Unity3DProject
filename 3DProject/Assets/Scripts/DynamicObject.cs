@@ -15,7 +15,7 @@ public abstract class DynamicObject : MonoBehaviour
     }
     private void Start()
     {
-        _speed = 20.0f;
+        _speed = 10.0f;
         Direction = new Vector3(0.0f, 0.0f, 0.0f);
         LookAt = Direction;
 
