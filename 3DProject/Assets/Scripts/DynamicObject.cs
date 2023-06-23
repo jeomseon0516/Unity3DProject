@@ -4,10 +4,10 @@ using UnityEngine;
 
 public abstract class DynamicObject : MonoBehaviour
 {
+    [SerializeField, Range(0.0f, 8.0f)] protected float _speed;
+
     public Vector3 Direction { get; protected set; } 
     public Vector3 LookAt { get; protected set; }
-    
-    [SerializeField] protected float _speed;
 
     private void Awake()
     {
