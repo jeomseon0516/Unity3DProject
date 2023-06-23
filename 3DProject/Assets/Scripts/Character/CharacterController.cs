@@ -17,7 +17,7 @@ public class CharacterController : DynamicObject
     }
     protected override void Init()
     {
-        _speed = 20.0f;
+        _speed = 5.0f;
     }
     protected override void CustomUpdate()
     {
