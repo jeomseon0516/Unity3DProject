@@ -5,10 +5,10 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
     private const float ANGLE_SPEED_MAX = 80.0f;
+    private const float CORRECTION_DISTANCE = 1.0f;
     private const float MAX_DISTANCE = 3.8f;
     private const float MIN_DISTANCE = 1.5f;
-    private const float CAMERA_SPEED = 12.5f;
-    private const float ROTATE_SPEED = 50.0f;
+    private const float CAMERA_SPEED = 10.0f;
     private const float Y_ANGLE_MAX = 64.0f;
     private const float WHEEL_SPEED = 800.0f;
     private const float DRAG_SPEED = 15.0f;
@@ -24,7 +24,7 @@ public class CameraController : MonoBehaviour
 
     [field:SerializeField] public GameObject TargetObject { get; set; }
 
-    void Start()
+    private void Start()
     {
         _beforeMousePosition = Input.mousePosition;
         _cameraAngle = new float[] { 0.0f, 0.0f };
@@ -32,13 +32,13 @@ public class CameraController : MonoBehaviour
         _offset = new Vector3(0.0f, 1.0f, 0.0f);
         _distance = 5.0f;
     }
-    void Update()
+    private void Update()
     {
         controlMouseWheel();
         controlMouseDrag();
         focusingCamera();
     }
-    void focusingCamera()
+    private void focusingCamera()
     {
         if (ReferenceEquals(TargetObject, null) || !TargetObject) return;
 
@@ -47,20 +47,27 @@ public class CameraController : MonoBehaviour
         if      (_cameraAngle[Y] < -Y_ANGLE_MAX) // 특정 각도 이상으로 넘어가면 카메라가 휙휙 돌아가서 눈 아프므로 각도 제한을 준다.
             _cameraAngle[Y] = -Y_ANGLE_MAX;
         else if (_cameraAngle[Y] >  Y_ANGLE_MAX)
-            _cameraAngle[Y] = Y_ANGLE_MAX;
+            _cameraAngle[Y] =  Y_ANGLE_MAX;
 
         Vector3 cameraDirection = Quaternion.Euler(_cameraAngle[Y], _cameraAngle[X], 0.0f) * Vector3.back;
-        Vector3 targetDirection = ((TargetObject.transform.position + _lookOffset) - transform.position).normalized;
-
         Vector3 targetPosition = TargetObject.transform.position + _offset + cameraDirection * _distance;
+
+        float targetObjectDistance = CustomMath.GetDistance(TargetObject.transform.position.z, transform.position.z, 
+                                                            TargetObject.transform.position.x, transform.position.x);
+
+        // 캐릭터가 카메라를 따라잡는 현상 방지
+        if (targetObjectDistance < CORRECTION_DISTANCE)
+            _distance += CORRECTION_DISTANCE - targetObjectDistance;
 
         float   distance  = Vector3.Distance(targetPosition, transform.position);
         Vector3 direction = (targetPosition - transform.position).normalized;
 
         transform.position += direction * distance * Time.deltaTime * CAMERA_SPEED;
-        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(targetDirection), Time.deltaTime * ROTATE_SPEED);
+
+        Vector3 targetDirection = ((TargetObject.transform.position + _lookOffset) - transform.position).normalized;
+        transform.rotation = Quaternion.LookRotation(targetDirection);
     }
-    void controlMouseWheel()
+    private void controlMouseWheel()
     {
         float wheelInput = WHEEL_SPEED * -Input.GetAxis("Mouse ScrollWheel") * Time.deltaTime;
 

@@ -21,8 +21,8 @@ public partial class CharacterController : DynamicObject
     }
     protected override void Init()
     {
-        _defaultSpeed = _speed = 3.0f;
-        _runSpeed = 5.0f;
+        _defaultSpeed = _speed = 8.0f;
+        _runSpeed = _speed * 1.5f;
     }
     protected override void CustomUpdate()
     {
