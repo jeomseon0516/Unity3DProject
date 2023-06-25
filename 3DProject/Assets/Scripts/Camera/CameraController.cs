@@ -59,13 +59,17 @@ public class CameraController : MonoBehaviour
         if (targetObjectDistance < CORRECTION_DISTANCE)
             _distance += CORRECTION_DISTANCE - targetObjectDistance;
 
+        // 거리 구하고
         float   distance  = Vector3.Distance(targetPosition, transform.position);
+        // 방향 구하기
         Vector3 direction = (targetPosition - transform.position).normalized;
 
+        // 카메라 이동 선형보간
         transform.position += direction * distance * Time.deltaTime * CAMERA_SPEED;
 
+        // 바라볼 방향의 오프셋을 더한 값의 정규화를 시키고
         Vector3 targetDirection = ((TargetObject.transform.position + _lookOffset) - transform.position).normalized;
-        transform.rotation = Quaternion.LookRotation(targetDirection);
+        transform.rotation = Quaternion.LookRotation(targetDirection); // 방향으로 카메라 로테이션, 타겟 오브젝트를 바라본다.
     }
     private void controlMouseWheel()
     {

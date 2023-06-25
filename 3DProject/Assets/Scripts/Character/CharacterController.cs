@@ -56,6 +56,10 @@ public partial class CharacterController : DynamicObject
 
         _speed = !Input.GetKey(KeyCode.LeftShift) ? _defaultSpeed : _runSpeed; 
     }
+    private void correctionTransform()
+    {
+
+    }
 }
 
 // 애니메이션
