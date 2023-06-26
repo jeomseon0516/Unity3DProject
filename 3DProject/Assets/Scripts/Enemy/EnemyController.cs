@@ -73,12 +73,12 @@ public partial class EnemyController : MonoBehaviour
 
         if (distance < 0.1f)
         {
-            StartCoroutine(SetRotation());
+            StartCoroutine(setRotation());
             TargetNode = TargetNode.Next ?? TargetNode;
         }
     }
 
-    IEnumerator SetRotation()
+    private IEnumerator setRotation()
     {
         float time;
         _isMove = true;
@@ -242,9 +242,7 @@ public partial class EnemyController : MonoBehaviour
             else
             {
                 if (shortDistance < pivotNode.Cost - shortNode.Cost)
-                {
                     shortNode.Next = pivotNode;
-                }
             }
 
             pivotNode.GetComponent<MyGizmo>().GizmoColor = Color.green;

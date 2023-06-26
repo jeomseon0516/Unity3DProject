@@ -8,8 +8,8 @@ using UnityEngine;
 public class AStar : MonoBehaviour
 {
     List<Vector3> _nodes = new List<Vector3>();
-
     [field:SerializeField] public GameObject TargetObject { get; set; }
+
     void Start()
     {
         
