@@ -49,22 +49,23 @@ public class CameraController : MonoBehaviour
         else if (_cameraAngle[Y] >  Y_ANGLE_MAX)
             _cameraAngle[Y] =  Y_ANGLE_MAX;
 
-        Vector3 cameraDirection = Quaternion.Euler(_cameraAngle[Y], _cameraAngle[X], 0.0f) * Vector3.back;
-        Vector3 targetPosition = TargetObject.transform.position + _offset + cameraDirection * _distance;
+        Vector3 cameraDirection = Quaternion.Euler(_cameraAngle[Y], _cameraAngle[X], 0.0f) * Vector3.back; // 카메라가 위치할 방향 (시점 아님 카메라 트랜스폼)
+        Vector3 cameraPosition = TargetObject.transform.position + _offset + cameraDirection * _distance; // 타겟의 위치로부터 + 오프셋 + 방향 * 카메라가 타겟으로부터 얼만큼 떨어질 건지의 거리
 
-        float targetObjectDistance = CustomMath.GetDistance(TargetObject.transform.position.z, transform.position.z, 
-                                                            TargetObject.transform.position.x, transform.position.x);
+        // 타겟과의 거리 구하기 y좌표를 뺀 2차원 상에서의 거리 구하기
+        float targetDistance = CustomMath.GetDistance(TargetObject.transform.position.z, transform.position.z, 
+                                                      TargetObject.transform.position.x, transform.position.x);
 
         // 캐릭터가 카메라를 따라잡는 현상 방지
-        if (targetObjectDistance < CORRECTION_DISTANCE)
-            _distance += CORRECTION_DISTANCE - targetObjectDistance;
+        if (targetDistance < CORRECTION_DISTANCE)
+            _distance += CORRECTION_DISTANCE - targetDistance;
 
-        // 거리 구하고
-        float   distance  = Vector3.Distance(targetPosition, transform.position);
+        // 카메라가 이동할 위치와 현재 카메라의 위치 거리 구하기
+        float   distance  = Vector3.Distance(cameraPosition, transform.position);
         // 방향 구하기
-        Vector3 direction = (targetPosition - transform.position).normalized;
+        Vector3 direction = (cameraPosition - transform.position).normalized;
 
-        // 카메라 이동 선형보간
+        // 목표로 하는 위치로 선형보간
         transform.position += direction * distance * Time.deltaTime * CAMERA_SPEED;
 
         // 바라볼 방향의 오프셋을 더한 값의 정규화를 시키고
