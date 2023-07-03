@@ -7,6 +7,7 @@ public partial class CharacterController : DynamicObject
     private Camera  _mainCamera;
     private Animator _animator;
     private Vector3 _beforeDirection;
+
     private float _defaultSpeed;
     private float _runSpeed;
 
@@ -67,6 +68,8 @@ public partial class CharacterController : DynamicObject
 {
     private void decideAnimationState()
     {
+        if (ReferenceEquals(_animator, null) || !_animator) return;
+
         _animator.SetFloat("moveSpeed", Mathf.Max(Mathf.Abs(Direction.x), Mathf.Abs(Direction.z)));
     }
 }

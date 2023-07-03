@@ -11,25 +11,9 @@ public class RendererManager : MonoBehaviour
     {
         TryGetComponent(out _renderer);
     }
-    private IEnumerator setColor()
-    {
-        if (ReferenceEquals(_renderer, null) || !_renderer) yield break;
 
-        Material material = new Material(Shader.Find("Legacy Shaders/Transparent/Specular"));
-        Color color = material.color;
-
-        while (color.a > 0.5f)
-        {
-            color.a -= Time.deltaTime;
-            _renderer.material.color = color;
-
-            yield return null;
-        }
-    }
 
     void Update()
     {
-        if (Input.GetKey(KeyCode.A))
-            StartCoroutine(setColor());
     }
 }

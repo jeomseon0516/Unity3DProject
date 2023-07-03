@@ -95,6 +95,7 @@
     <None Include="Assets\Visual Design Cafe\ShaderX\Templates\Common\Platforms\XBoxOne.hlsl" />
     <None Include="Assets\Visual Design Cafe\Package Manager\VisualDesignCafe.Packages.dll" />
     <None Include="Assets\Visual Design Cafe\Nature Renderer\Plugins\VisualDesignCafe.Rendering.Nature.Editor.dll" />
+    <None Include="Assets\Scripts\CustomShader\MyShader.shader" />
     <None Include="Assets\Visual Design Cafe\ShaderX\Plugins\VisualDesignCafe.ShaderX.dll" />
     <None Include="Assets\Visual Design Cafe\Nature Renderer\Plugins\VisualDesignCafe.Rendering.Instancing.Editor.dll" />
     <None Include="Assets\Visual Design Cafe\ShaderX\Templates\Common\Platforms\Metal.hlsl" />

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CameraController : MonoBehaviour
+public partial class CameraController : MonoBehaviour
 {
     private const float ANGLE_SPEED_MAX = 80.0f;
     private const float CORRECTION_DISTANCE = 1.0f;
@@ -31,13 +31,17 @@ public class CameraController : MonoBehaviour
         _lookOffset = new Vector3(0.0f, 1.5f, 0.0f);
         _offset = new Vector3(0.0f, 1.0f, 0.0f);
         _distance = 5.0f;
+
+        _isBlock = false;
     }
     private void Update()
     {
         controlMouseWheel();
         controlMouseDrag();
         focusingCamera();
+        checkBlockObject();
     }
+
     private void focusingCamera()
     {
         if (ReferenceEquals(TargetObject, null) || !TargetObject) return;
@@ -101,5 +105,70 @@ public class CameraController : MonoBehaviour
 
             _beforeMousePosition = Input.mousePosition;
         }
+    }
+}
+
+// Mask
+public partial class CameraController : MonoBehaviour
+{
+    [SerializeField] private LayerMask _layerMask;
+
+    private Renderer _blockObjectRenderer;
+    private string SHADER_PATH = "Legacy Shaders/Transparent/Specular";
+    private bool _isBlock;
+
+    private void checkBlockObject()
+    {
+        float distance = Vector3.Distance(transform.position, TargetObject.transform.position);
+        Vector3 direction = (transform.position - TargetObject.transform.position).normalized;
+
+        Debug.DrawRay(TargetObject.transform.position, direction * distance, Color.red);
+        bool isCollision = Physics.Raycast(new Ray(TargetObject.transform.position, direction), out RaycastHit hit, distance);
+
+        if (ReferenceEquals(hit.transform, TargetObject.transform)) 
+            return;
+
+        if (isCollision)
+        {
+            if (!_isBlock)
+            {
+                _blockObjectRenderer = hit.transform.GetComponent<Renderer>();
+                StartCoroutine(setBlockObjectColor(Shader.Find(SHADER_PATH), _blockObjectRenderer, 0.3f));
+                _isBlock = true;
+            }
+        }
+        else
+        {
+            if (_isBlock)
+            {
+                _isBlock = false;
+                StartCoroutine(setBlockObjectColor(Shader.Find("Standard"), _blockObjectRenderer, 1.0f));
+            }
+        }
+    }
+
+    private IEnumerator setBlockObjectColor(Shader shader, Renderer renderer, float targetValue)
+    {
+        if (ReferenceEquals(renderer, null) || !renderer) yield break;
+
+        renderer.material.shader = shader;
+        Color color = renderer.material.color;
+
+        float interval = Mathf.Infinity;
+
+        while (interval > 0.01f)
+        {
+            color.a = Mathf.Lerp(color.a, targetValue, Time.deltaTime * 10.0f);
+            renderer.material.color = color;
+
+            interval = Mathf.Abs(color.a - targetValue);
+
+            print(color.a);
+
+            yield return null;
+        }
+
+        color.a = targetValue;
+        renderer.material.color = color;
     }
 }
