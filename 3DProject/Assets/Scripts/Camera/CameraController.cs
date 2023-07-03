@@ -65,7 +65,6 @@ public class CameraController : MonoBehaviour
         // 방향 구하기
         Vector3 direction = (cameraPosition - transform.position).normalized;
 
-        // 목표로 하는 위치로 선형보간
         transform.position += direction * distance * Time.deltaTime * CAMERA_SPEED;
 
         // 바라볼 방향의 오프셋을 더한 값의 정규화를 시키고

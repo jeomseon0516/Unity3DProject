@@ -374,6 +374,7 @@
 "Assets/Scripts/FindWay/AStar.cs"
 "Assets/Scripts/FindWay/AStarNodeDebug.cs"
 "Assets/Scripts/Gizmo/MyGizmo.cs"
+"Assets/Scripts/Manager/RendererManager.cs"
 "Assets/Scripts/Matrix.cs"
 "Assets/Scripts/MyClass.cs"
 "Assets/Scripts/Rotation.cs"
