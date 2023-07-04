@@ -22,7 +22,7 @@ public partial class CameraController : MonoBehaviour
     [SerializeField] private Vector3 _offset;
 
     private Vector3 _beforeMousePosition;
-    private Dictionary<string, IEnumerable> _coroutineMap;
+    private Dictionary<string, Dictionary<string, IEnumerator>> _coroutineMap = new Dictionary<string, Dictionary<string, IEnumerator>>();
 
     [field:SerializeField] public GameObject TargetObject { get; set; }
 
@@ -135,9 +135,10 @@ public partial class CameraController : MonoBehaviour
         for (int i = 0; i < _objects.Count;)
         {
             if (!hits.Any(hit =>      hit.transform.Equals(_objects[i])) &&
-                !colliders.Any(hit => hit.transform.Equals(_objects[i])))
+                !colliders.Any(hit => hit.transform.Equals(_objects[i])) &&
+                _objects[i].TryGetComponent(out Renderer renderer))
             {
-                StartCoroutine(setFadeIn(_objects[i].transform.GetComponent<Renderer>(), 1.0f));
+                StartCoroutine(setFadeIn(renderer, 1.0f));
                 _objects.Remove(_objects[i]);
             }
             else
@@ -199,16 +200,20 @@ public partial class CameraController : MonoBehaviour
         }
     }
 
-    private void StartCoroutineInMap(string key, Coroutine coroutine)
+    private IEnumerator GetMapInCoroutine(string objectKey, string key, IEnumerator coroutine)
     {
-        CheckMapInCoroutine(key, coroutine);
+        if (!_coroutineMap.ContainsKey(objectKey))
+        {
+            Dictionary<string, IEnumerator> map = new Dictionary<string, IEnumerator>();
+            map.Add(key, coroutine);
+            _coroutineMap.Add(objectKey, map);
+        }
+        else
+        {
+            if (!_coroutineMap[objectKey].ContainsKey(key)) 
+                _coroutineMap[objectKey].Add(key, coroutine);
+        }
 
-        StartCoroutine(_coroutineMap[key]);
-    }
-
-    private void CheckMapInCoroutine(string key, Coroutine coroutine)
-    {
-        if (!_coroutineMap.ContainsKey(key))
-            _coroutineMap.Add(key, coroutine);
+        return _coroutineMap[objectKey][key];
     }
 }
