@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public partial class CameraController : MonoBehaviour
 {
@@ -21,6 +22,7 @@ public partial class CameraController : MonoBehaviour
     [SerializeField] private Vector3 _offset;
 
     private Vector3 _beforeMousePosition;
+    private Dictionary<string, IEnumerable> _coroutineMap;
 
     [field:SerializeField] public GameObject TargetObject { get; set; }
 
@@ -31,8 +33,6 @@ public partial class CameraController : MonoBehaviour
         _lookOffset = new Vector3(0.0f, 1.5f, 0.0f);
         _offset = new Vector3(0.0f, 1.0f, 0.0f);
         _distance = 5.0f;
-
-        _isBlock = false;
     }
     private void Update()
     {
@@ -108,50 +108,47 @@ public partial class CameraController : MonoBehaviour
     }
 }
 
-// Mask
 public partial class CameraController : MonoBehaviour
 {
-    [SerializeField] private LayerMask _layerMask;
-
-    private Renderer _blockObjectRenderer;
     private string SHADER_PATH = "Legacy Shaders/Transparent/Specular";
-    private bool _isBlock;
+
+    [SerializeField] private LayerMask _layerMask;
+    private List<Transform> _objects = new List<Transform>();
 
     private void checkBlockObject()
     {
         float distance = Vector3.Distance(transform.position, TargetObject.transform.position);
-        Vector3 direction = (transform.position - TargetObject.transform.position).normalized;
 
-        Debug.DrawRay(TargetObject.transform.position, direction * distance, Color.red);
-        bool isCollision = Physics.Raycast(new Ray(TargetObject.transform.position, direction), out RaycastHit hit, distance);
+        Debug.DrawRay(transform.position, transform.forward * distance, Color.red);
 
-        if (ReferenceEquals(hit.transform, TargetObject.transform)) 
-            return;
+        Ray ray = new Ray(transform.position, transform.forward);
 
-        if (isCollision)
+        RaycastHit[] hits = Physics.RaycastAll(ray, distance);
+        Collider[] colliders = Physics.OverlapSphere(transform.position, 0.1f);
+
+        foreach (RaycastHit hit in hits)
+            checkKeepObjectFromTransform(hit.transform);
+
+        foreach (Collider collider in colliders)
+            checkKeepObjectFromTransform(collider.transform);
+
+        for (int i = 0; i < _objects.Count;)
         {
-            if (!_isBlock)
+            if (!hits.Any(hit =>      hit.transform.Equals(_objects[i])) &&
+                !colliders.Any(hit => hit.transform.Equals(_objects[i])))
             {
-                _blockObjectRenderer = hit.transform.GetComponent<Renderer>();
-                StartCoroutine(setBlockObjectColor(Shader.Find(SHADER_PATH), _blockObjectRenderer, 0.3f));
-                _isBlock = true;
+                StartCoroutine(setFadeIn(_objects[i].transform.GetComponent<Renderer>(), 1.0f));
+                _objects.Remove(_objects[i]);
             }
-        }
-        else
-        {
-            if (_isBlock)
-            {
-                _isBlock = false;
-                StartCoroutine(setBlockObjectColor(Shader.Find("Standard"), _blockObjectRenderer, 1.0f));
-            }
+            else
+                ++i;
         }
     }
-
-    private IEnumerator setBlockObjectColor(Shader shader, Renderer renderer, float targetValue)
+    private IEnumerator setFadeOut(Renderer renderer, float targetValue)
     {
         if (ReferenceEquals(renderer, null) || !renderer) yield break;
 
-        renderer.material.shader = shader;
+        renderer.material.shader = Shader.Find(SHADER_PATH);
         Color color = renderer.material.color;
 
         float interval = Mathf.Infinity;
@@ -163,12 +160,55 @@ public partial class CameraController : MonoBehaviour
 
             interval = Mathf.Abs(color.a - targetValue);
 
-            print(color.a);
-
             yield return null;
         }
 
         color.a = targetValue;
         renderer.material.color = color;
+    }
+
+    private IEnumerator setFadeIn(Renderer renderer, float targetValue)
+    {
+        if (ReferenceEquals(renderer, null) || !renderer) yield break;
+
+        Color color = renderer.material.color;
+        float interval = Mathf.Infinity;
+
+        while (interval > 0.01f)
+        {
+            color.a = Mathf.Lerp(color.a, targetValue, Time.deltaTime * 10.0f);
+            renderer.material.color = color;
+
+            interval = Mathf.Abs(color.a - targetValue);
+
+            yield return null;
+        }
+
+        color.a = targetValue;
+        renderer.material.shader = Shader.Find("Standard");
+        renderer.material.color = color;
+    }
+    private void checkKeepObjectFromTransform(Transform trs)
+    {
+        if (_objects.Contains(trs) || ReferenceEquals(trs, TargetObject.transform)) return;
+
+        if (trs.TryGetComponent(out Renderer renderer))
+        {
+            _objects.Add(trs.transform);
+            StartCoroutine(setFadeOut(renderer, 0.1f));
+        }
+    }
+
+    private void StartCoroutineInMap(string key, Coroutine coroutine)
+    {
+        CheckMapInCoroutine(key, coroutine);
+
+        StartCoroutine(_coroutineMap[key]);
+    }
+
+    private void CheckMapInCoroutine(string key, Coroutine coroutine)
+    {
+        if (!_coroutineMap.ContainsKey(key))
+            _coroutineMap.Add(key, coroutine);
     }
 }

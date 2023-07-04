@@ -6,7 +6,6 @@ public partial class CharacterController : DynamicObject
 {
     private Camera  _mainCamera;
     private Animator _animator;
-    private Vector3 _beforeDirection;
 
     private float _defaultSpeed;
     private float _runSpeed;
@@ -34,7 +33,7 @@ public partial class CharacterController : DynamicObject
         if (Mathf.Abs(Input.GetAxisRaw("Horizontal")) > 0 || 
             Mathf.Abs(Input.GetAxisRaw("Vertical"))   > 0)
         {
-            if (Input.GetKeyDown(KeyCode.LeftShift))
+            if (Input.GetKeyDown(KeyCode.LeftShift) && !ReferenceEquals(_animator, null) && _animator)
             {
                 _animator.SetBool("isSprint", true);
                 _animator.speed = 1.2f;
@@ -47,9 +46,7 @@ public partial class CharacterController : DynamicObject
                 new Vector3(Direction.x, 0.0f, Direction.z);
         }
 
-        _beforeDirection = Direction;
-
-        if (Input.GetKeyUp(KeyCode.LeftShift))
+        if (Input.GetKeyUp(KeyCode.LeftShift) && !ReferenceEquals(_animator, null) && _animator)
         {
             _animator.SetBool("isSprint", false);
             _animator.speed = 1;
