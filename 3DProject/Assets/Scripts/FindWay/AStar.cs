@@ -23,28 +23,39 @@ public class AStar : MonoBehaviour
 {
     private const int COST = 10;
     private const int DIAGONAL_COST = 14;
-    public float RADIUS { get => 0.5F; }
-
-    AStarNode startNode, endNode;
+    private const int VERTICAL_DIAGONAL_COST = 18;
+    public float SIZE { get => 0.4F; }
     [field:SerializeField] public List<AStarNode> Nodes { get; private set; } = new List<AStarNode>();
     [field:SerializeField] public GameObject TargetObject { get; set; }
+    public bool IsFind { get; private set; }
+    public AStarNode StartNode { get; private set; } 
+    public AStarNode EndNode { get; private set; }
 
-    private void Awake()
-    {
-        makeStartNodeEndNode();
-    }
     void Start()
     {
+        IsFind = false;
     }
     void Update()
     {
         if (ReferenceEquals(TargetObject, null) || !TargetObject) return;
 
-
+        if (!IsFind)
+        {
+            IsFind = true;
+            makeStartNodeEndNode();
+        }
     }
+    // 생성은 스타트 노드 기준으로 잡는다.
     void makeStartNodeEndNode()
     {
-        startNode = new AStarNode(null, transform.position);
-        Nodes.Add(startNode);
+        StartNode = new AStarNode(null, transform.position);
+
+        Vector3 interval = StartNode.NodePoint - TargetObject.transform.position;
+
+        float x = Mathf.RoundToInt(Mathf.Abs(interval.x / SIZE));
+        float z = Mathf.RoundToInt(Mathf.Abs(interval.z / SIZE));
+
+        Vector3 endPoint = StartNode.NodePoint + new Vector3(interval.x < 0 ? x : -x, 0.0f, interval.z < 0 ? z : -z) * SIZE;
+        EndNode = new AStarNode(null, endPoint);
     }
 }

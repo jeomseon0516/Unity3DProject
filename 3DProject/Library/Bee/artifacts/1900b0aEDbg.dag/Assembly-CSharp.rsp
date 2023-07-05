@@ -375,6 +375,7 @@
 "Assets/Scripts/CustomCollision.cs"
 "Assets/Scripts/DynamicObject.cs"
 "Assets/Scripts/Enemy/EnemyController.cs"
+"Assets/Scripts/FieldOfView/FOVController.cs"
 "Assets/Scripts/FindWay/AStar.cs"
 "Assets/Scripts/FindWay/AStarNodeDebug.cs"
 "Assets/Scripts/Gizmo/MyGizmo.cs"
