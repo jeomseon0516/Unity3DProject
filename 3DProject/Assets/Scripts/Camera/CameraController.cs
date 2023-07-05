@@ -26,8 +26,20 @@ public partial class CameraController : MonoBehaviour
 
     [field:SerializeField] public GameObject TargetObject { get; set; }
 
+    private float _x;
+    private float _y;
+    private float _w;
+    private float _h;
+
+    private Vector3[] _outCorners = new Vector3[4];
+
     private void Start()
     {
+        _x = 0.5f;
+        _y = 0.5f;
+        _w = 0.4f;
+        _h = 0.4f;
+
         _beforeMousePosition = Input.mousePosition;
         _cameraAngle = new float[] { 0.0f, 0.0f };
         _lookOffset = new Vector3(0.0f, 1.5f, 0.0f);
@@ -119,11 +131,23 @@ public partial class CameraController : MonoBehaviour
     {
         float distance = Vector3.Distance(transform.position, TargetObject.transform.position);
 
-        Debug.DrawRay(transform.position, transform.forward * distance, Color.red);
+        Camera.main.CalculateFrustumCorners(
+            new Rect(_x, _y, _w, _h),
+            Camera.main.farClipPlane,
+            Camera.main.stereoActiveEye,
+            _outCorners);
 
-        Ray ray = new Ray(transform.position, transform.forward);
+        List<RaycastHit> hits = new List<RaycastHit>();
 
-        RaycastHit[] hits = Physics.RaycastAll(ray, distance);
+        foreach (Vector3 point in _outCorners)
+        {
+            Vector3 rotationPoint = transform.rotation * point;
+            Vector3 direction = (rotationPoint - transform.position).normalized;
+
+            Debug.DrawRay(transform.position, direction * distance, Color.blue);
+            hits.AddRange(Physics.RaycastAll(transform.position, direction, distance));
+        }
+
         Collider[] colliders = Physics.OverlapSphere(transform.position, 0.1f);
 
         foreach (RaycastHit hit in hits)
