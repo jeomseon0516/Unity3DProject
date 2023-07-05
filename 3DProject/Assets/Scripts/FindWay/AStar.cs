@@ -44,6 +44,10 @@ public class AStar : MonoBehaviour
             IsFind = true;
             makeStartNodeEndNode();
         }
+        else
+        {
+
+        }
     }
     // 생성은 스타트 노드 기준으로 잡는다.
     void makeStartNodeEndNode()
