@@ -26,8 +26,6 @@ public class AStarNodeDebug : MonoBehaviour
     {
         if (_aStar.IsFind && !_isFind)
         {
-            print("?");
-
             foreach (AStarNode node in _aStar.Nodes)
                 _vertices.Add(createVertices(convertNodePoint(node)));
 
@@ -39,7 +37,7 @@ public class AStarNodeDebug : MonoBehaviour
             drawBox(vertices, Color.black);
 
         drawBox(_pivotNodes[START], Color.blue);
-        drawBox(_pivotNodes[END], Color.red);
+        drawBox(_pivotNodes[END],   Color.red);
 
         _isFind = _aStar.IsFind;
     }

@@ -6,13 +6,13 @@ public class AStarNode
 {
     public AStarNode Parent { get; set; }
     public Vector3 NodePoint { get; set; } 
-    public float Cost { get; set; }
+    public int Cost { get; set; } // G
 
-    public AStarNode(AStarNode parent, Vector3 nodePoint)
+    public AStarNode(AStarNode parent, Vector3 nodePoint, int cost)
     {
         Parent = parent;
         NodePoint = nodePoint;
-        Cost = 0.0f;
+        Cost = cost;
     }
 }
 
@@ -27,39 +27,57 @@ public class AStar : MonoBehaviour
     public float SIZE { get => 0.4F; }
     [field:SerializeField] public List<AStarNode> Nodes { get; private set; } = new List<AStarNode>();
     [field:SerializeField] public GameObject TargetObject { get; set; }
+
+    private List<AStarNode> _openList   = new List<AStarNode>();
+    private List<AStarNode> _closedList = new List<AStarNode>();
+
     public bool IsFind { get; private set; }
+    public bool IsMove { get; private set; }
     public AStarNode StartNode { get; private set; } 
     public AStarNode EndNode { get; private set; }
 
-    void Start()
+    private void Start()
     {
         IsFind = false;
     }
-    void Update()
+    private void Update()
     {
         if (ReferenceEquals(TargetObject, null) || !TargetObject) return;
 
         if (!IsFind)
         {
             IsFind = true;
-            makeStartNodeEndNode();
+            makeStartNodeEndNode(TargetObject.transform.position);
+            findWay(null, StartNode);
         }
         else
         {
-
+            
         }
     }
     // 생성은 스타트 노드 기준으로 잡는다.
-    void makeStartNodeEndNode()
+    private void makeStartNodeEndNode(Vector3 targetPoint)
     {
-        StartNode = new AStarNode(null, transform.position);
+        StartNode = new AStarNode(null, transform.position, 0);
 
-        Vector3 interval = StartNode.NodePoint - TargetObject.transform.position;
+        Vector3 interval = StartNode.NodePoint - targetPoint;
 
-        float x = Mathf.RoundToInt(Mathf.Abs(interval.x / SIZE));
-        float z = Mathf.RoundToInt(Mathf.Abs(interval.z / SIZE));
+        int x = Mathf.RoundToInt(Mathf.Abs(interval.x / SIZE));
+        int z = Mathf.RoundToInt(Mathf.Abs(interval.z / SIZE));
 
         Vector3 endPoint = StartNode.NodePoint + new Vector3(interval.x < 0 ? x : -x, 0.0f, interval.z < 0 ? z : -z) * SIZE;
-        EndNode = new AStarNode(null, endPoint);
+        EndNode = new AStarNode(null, endPoint, (x + z) * COST);
+
+        print(EndNode.Cost);
+    }
+    private void findWay(AStarNode parentNode, AStarNode pivotNode)
+    {
+        _closedList.Add(pivotNode);
+
+        // 여기서 검사
+        for (int i = 0; i < 9; ++i)
+        {
+            pivotNode.
+        }
     }
 }
