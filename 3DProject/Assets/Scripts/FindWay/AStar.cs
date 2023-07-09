@@ -7,13 +7,15 @@ using UnityEngine;
 public class AStarNode : IComparable<AStarNode>
 {
     public AStarNode Parent { get; set; }
-    public Vector3 NodePoint { get; set; } 
+    public Vector3Int NodePoint { get; set; } // 노드의 포인트 Key값으로 쓰인다.
+    public Vector3 NodePosition { get; set; }
     public int Cost { get; set; } // G
     public int Heuristics { get; set; } // H
-    public AStarNode(AStarNode parent, Vector3 nodePoint, int cost)
+    public AStarNode(AStarNode parent, Vector3Int nodePoint, Vector3 nodePosition, int cost)
     {
         Parent = parent;
         NodePoint = nodePoint;
+        NodePosition = nodePosition;
         Cost = cost;
     }
     // 1이 true -1 이 false // 현재 
@@ -32,13 +34,13 @@ public class AStar : MonoBehaviour
     private const int DIAGONAL_COST = 14;
     private const int VERTICAL_DIAGONAL_COST = 18;
     public float SIZE { get => 0.4F; }
+
+    private Dictionary<Vector3Int, AStarNode> _closedList = new Dictionary<Vector3Int, AStarNode>(); // 키값을 어떻게 가져야만 할까?...
+    private PriorityQueue<AStarNode> _openList  = new PriorityQueue<AStarNode>();
+    public List<AStarNode> FindList { get; private set; } = new List<AStarNode>();
+
     [field:SerializeField] public List<AStarNode> Nodes { get; private set; } = new List<AStarNode>();
     [field:SerializeField] public GameObject TargetObject { get; set; }
-
-    private PriorityQueue<AStarNode> _openList  = new PriorityQueue<AStarNode>();
-    private List<AStarNode> _closedList = new List<AStarNode>();
-    private List<AStarNode> _findList = new List<AStarNode>();
-
     public bool IsFind { get; private set; }
     public bool IsMove { get; private set; }
     public AStarNode StartNode { get; private set; } 
@@ -56,74 +58,89 @@ public class AStar : MonoBehaviour
         {
             IsFind = true;
             makeStartNodeEndNode(TargetObject.transform.position);
+
             _openList.Push(StartNode);
-            _findList.Add(findWay());
-        }
-        else
-        {
-            
+             findWay();
         }
     }
     // 생성은 스타트 노드 기준으로 잡는다.
-    private void makeStartNodeEndNode(Vector3 targetPoint)
+    private void makeStartNodeEndNode(Vector3 targetPosition)
     {
-        StartNode = new AStarNode(null, transform.position, 0);
+        StartNode = new AStarNode(null, new Vector3Int(0, 0, 0), transform.position, 0);
 
-        int[] g = GetG(StartNode, targetPoint, out Vector3 interval);
-
-        int x = g[0];
-        int z = g[1];
-
-        Vector3 endPoint = StartNode.NodePoint + new Vector3(interval.x < 0 ? x : -x, 0.0f, interval.z < 0 ? z : -z) * SIZE;
-        EndNode = new AStarNode(null, endPoint, (x + z) * COST);
+        Vector3Int endNodePoint = getNodePoint(StartNode, targetPosition, out int[] g);
+        EndNode = new AStarNode(null, endNodePoint, StartNode.NodePosition + new Vector3(endNodePoint.x, 0.0f, endNodePoint.z) * SIZE, (g[0] + g[1]) * COST);
     }
-    private AStarNode findWay()
+    private void findWay()
     {
         AStarNode pivotNode = _openList.Pop();
-        _closedList.Add(pivotNode);
 
-        /*
-         * 0 1 2
-         * 3 p 4
-         * 5 6 7
-        */
-        PriorityQueue<AStarNode> nodes = new PriorityQueue<AStarNode>();
+        if (!_closedList.ContainsKey(pivotNode.NodePoint))
+            _closedList.Add(pivotNode.NodePoint, pivotNode);
 
         if (!(Vector3.Distance(pivotNode.NodePoint, EndNode.NodePoint) < SIZE * 0.5f))
         {
-            GetAStarNode(pivotNode, new Vector3(SIZE,  0.0f, SIZE),  pivotNode.Heuristics);
-            GetAStarNode(pivotNode, new Vector3(0.0f,  0.0f, SIZE),  pivotNode.Heuristics);
-            GetAStarNode(pivotNode, new Vector3(-SIZE, 0.0f, SIZE),  pivotNode.Heuristics);
-            GetAStarNode(pivotNode, new Vector3(SIZE,  0.0f, 0.0f),  pivotNode.Heuristics);
-            GetAStarNode(pivotNode, new Vector3(-SIZE, 0.0f, 0.0f),  pivotNode.Heuristics);
-            GetAStarNode(pivotNode, new Vector3(SIZE,  0.0f, -SIZE), pivotNode.Heuristics);
-            GetAStarNode(pivotNode, new Vector3(0.0f,  0.0f, -SIZE), pivotNode.Heuristics);
-            GetAStarNode(pivotNode, new Vector3(-SIZE, 0.0f, -SIZE), pivotNode.Heuristics);
+            if (checkMakeAndAStarNode(pivotNode, out AStarNode centerTopNode, pivotNode.NodePosition + new Vector3(0.0f, 0.0f, SIZE), pivotNode.Heuristics))
+                _openList.Push(centerTopNode);
+            if (checkMakeAndAStarNode(pivotNode, out AStarNode leftCenterNode, pivotNode.NodePosition + new Vector3(SIZE, 0.0f, 0.0f), pivotNode.Heuristics))
+                _openList.Push(leftCenterNode);
+            if (checkMakeAndAStarNode(pivotNode, out AStarNode rightCenterNode, pivotNode.NodePosition + new Vector3(-SIZE, 0.0f, 0.0f), pivotNode.Heuristics))
+                _openList.Push(rightCenterNode);
+            if (checkMakeAndAStarNode(pivotNode, out AStarNode centerBottomNode, pivotNode.NodePosition + new Vector3(0.0f, 0.0f, -SIZE), pivotNode.Heuristics))
+                _openList.Push(centerBottomNode);
+            if (checkMakeAndAStarNode(pivotNode, out AStarNode leftTopNode, pivotNode.NodePosition + new Vector3(SIZE, 0.0f, SIZE), pivotNode.Heuristics))
+                _openList.Push(leftTopNode);
+            if (checkMakeAndAStarNode(pivotNode, out AStarNode rightTopNode, pivotNode.NodePosition + new Vector3(-SIZE, 0.0f, SIZE), pivotNode.Heuristics))
+                _openList.Push(rightTopNode);
+            if (checkMakeAndAStarNode(pivotNode, out AStarNode leftBottomNode, pivotNode.NodePosition + new Vector3(SIZE, 0.0f, -SIZE), pivotNode.Heuristics))
+                _openList.Push(leftBottomNode);
+            if (checkMakeAndAStarNode(pivotNode, out AStarNode rightBottomNode, pivotNode.NodePosition + new Vector3(-SIZE, 0.0f, -SIZE), pivotNode.Heuristics))
+                _openList.Push(rightBottomNode);
 
-            if ()
-
-            _findList.Add(findWay());
+            findWay();
         }
-        else
-            _findList.Add(EndNode);
 
-        return pivotNode.Parent;
+        FindList.Add(pivotNode);
     }
-    private int[] GetG(AStarNode pivotNode, Vector3 targetPoint, out Vector3 interval)
+    private bool checkMakeAndAStarNode(AStarNode pivotNode, out AStarNode newNode, Vector3 position, int heuristics)
     {
-        interval = pivotNode.NodePoint - targetPoint;
+        Vector3Int nodePoint = getNodePoint(pivotNode, position, out int[] g);
+
+        float distance = Vector3.Distance(pivotNode.NodePosition, position);
+
+        // closedList에 이미 요소가 들어있거나, 생성할 노드의 위치에 다른 어떤 물체가 있다면?
+        if (_closedList.ContainsKey(nodePoint) || 
+                Physics.Raycast(
+                    pivotNode.NodePosition, 
+                    (position - pivotNode.NodePosition).normalized, 
+                    distance, 
+                    1 << LayerMask.NameToLayer("Wall"))
+                )
+        {
+            newNode = null;
+            return false;
+        }
+
+        newNode = new AStarNode(pivotNode, nodePoint, position, (g[0] + g[1]) * COST + heuristics);
+
+        return true;
+    }
+    private int[] getG(AStarNode pivotNode, Vector3 targetPosition, out Vector3 interval)
+    {
+        interval = pivotNode.NodePosition - targetPosition;
 
         int x = Mathf.RoundToInt(Mathf.Abs(interval.x / SIZE));
         int z = Mathf.RoundToInt(Mathf.Abs(interval.z / SIZE));
 
         return new int[2] { x, z };
     }
-
-    private AStarNode GetAStarNode(AStarNode pivotNode, Vector3 position, int heuristics)
+    private Vector3Int getNodePoint(AStarNode pivotNode, Vector3 position, out int[] g)
     {
-        Vector3 nodePoint = pivotNode.NodePoint + position;
-        int[] g = GetG(pivotNode, nodePoint, out Vector3 interval);
+        g = getG(pivotNode, position, out Vector3 interval);
 
-        return new AStarNode(pivotNode, nodePoint, g[0] + g[1] + heuristics);
+        int x = g[0];
+        int z = g[1];
+
+        return new Vector3Int(interval.x < 0 ? x : -x, 0, interval.z < 0 ? z : -z);
     }
 }
