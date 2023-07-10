@@ -28,9 +28,6 @@ public class AStarNodeDebug : MonoBehaviour
     {
         if (_aStar.IsFind && !_isFind)
         {
-            foreach (AStarNode node in _aStar.Nodes)
-                _vertices.Add(createVertices(convertNodePoint(node)));
-
             foreach (AStarNode node in _aStar.FindList)
                 _findNodes.Add(createVertices(convertNodePoint(node)));
 

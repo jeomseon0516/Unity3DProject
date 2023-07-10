@@ -5,7 +5,7 @@ using UnityEngine;
 
 /* 
  * 우선순위 큐를 사용하는 이유 AStar의 오픈리스트에 들어간 노드에서 코스트가 가장 적은 노드를 찾아야하기 때문
- * min heap으로 구현한 우선순위 큐를 사용한다. 배열이나 링크드 리스트의 경우 정렬을 할때 시간 복잡도의 문제가 생긴다.
+ * min heap으로 구현한 우선순위 큐를 사용한다. 배열이나 링크드 리스트의 경우 정렬을 할때 매우 큰 비용이 들어갈 수 있다.
  * 리스트의 경우 가장 앞부분에 코스트가 적은 노드를 넣을 경우 뒤에 있는 요소들을 모두 한칸 씩 뒤로 밀어주어야 해서
  * 효율이 매우 안좋아진다. 링크드 리스트의 경우 삽입을 할때 최악의 경우 모든 데이터를 순회할 수 있으므로 효율이 좋지않다.
  * 우선순위 큐의 경우 트리의 구조로 이루어져 있기 때문에 insert 할때 깊이가 깊어질때마다 연산횟수가 1회 늘어나므로 매우 효율적이다.
@@ -17,6 +17,11 @@ public class PriorityQueue<T> where T : IComparable<T>
 {
     private List<T> _heap = new List<T>();
     public int Count { get => _heap.Count; }
+
+    public void Clear()
+    {
+        _heap.Clear();
+    }
 
     public void Push(T t)
     {
