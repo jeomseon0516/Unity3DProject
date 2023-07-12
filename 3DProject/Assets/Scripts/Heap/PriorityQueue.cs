@@ -12,7 +12,6 @@ using UnityEngine;
  * 힙 트리의 구조로 구현한다. 자식 노드의 위치는 항상 확정적이기 때문에 배열로 구현이 가능하다. index 접근 가능
 */
 
-// 얘를 수정해야 할까?
 public class PriorityQueue<T> where T : IComparable<T>
 {
     private List<T> _heap = new List<T>();
@@ -62,7 +61,7 @@ public class PriorityQueue<T> where T : IComparable<T>
 
             int nextIndex = nowIndex;
 
-            if (leftIndex  <= lastIndex && _heap[nextIndex].CompareTo(_heap[leftIndex])  < 0)
+            if (leftIndex <= lastIndex && _heap[nextIndex].CompareTo(_heap[leftIndex]) < 0)
                 nextIndex = leftIndex;
             if (rightIndex <= lastIndex && _heap[nextIndex].CompareTo(_heap[rightIndex]) < 0)
                 nextIndex = rightIndex;
@@ -71,12 +70,17 @@ public class PriorityQueue<T> where T : IComparable<T>
                 break;
 
             T temp = _heap[nowIndex];
-            _heap[nowIndex]  = _heap[nextIndex];
+            _heap[nowIndex] = _heap[nextIndex];
             _heap[nextIndex] = temp;
 
             nowIndex = nextIndex;
         }
 
         return ret;
+    }
+
+    public T this[int index]
+    {
+        get => _heap[index];
     }
 }

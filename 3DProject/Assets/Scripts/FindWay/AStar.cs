@@ -37,10 +37,10 @@ public class AStar : MonoBehaviour
     private const int VERTICAL_DIAGONAL_COST = 18;
     public float SIZE { get => 0.4F; }
 
-    private Dictionary<Vector3Int, AStarNode> _closedList = new Dictionary<Vector3Int, AStarNode>(); // 키값을 어떻게 가져야만 할까?...
-    private Dictionary<Vector3Int, AStarNode> _openList   = new Dictionary<Vector3Int, AStarNode>(); // 이미 오픈리스트에 있는 경우를 체크하기 위해서
+    private HashSet<Vector3Int> _closedList = new HashSet<Vector3Int>(); // 키값을 어떻게 가져야만 할까?...
+    private Dictionary<Vector3Int, AStarNode> _openList = new Dictionary<Vector3Int, AStarNode>(); // 이미 오픈리스트에 있는 경우를 체크하기 위해서
     private PriorityQueue<AStarNode> _openPq  = new PriorityQueue<AStarNode>();
-    public List<AStarNode> FindList { get; } = new List<AStarNode>();
+    public Stack<AStarNode> FindList { get; } = new Stack<AStarNode>(); // 찾아낸 노드를 순차적으로 가져와 이동할 것이므로 스택을 사용
     [field:SerializeField] public GameObject TargetObject { get; set; }
     public bool IsFind { get; private set; }
     public bool IsMove { get; private set; }
@@ -55,18 +55,25 @@ public class AStar : MonoBehaviour
     {
         if (ReferenceEquals(TargetObject, null) || !TargetObject) return;
 
-        if (!IsFind)
+        if (IsFind)
+            IsFind = false;
+
+        if (Input.GetKeyDown(KeyCode.Return))
         {
-            IsFind = true;
+            if (!IsFind)
+            {
+                IsFind = true;
 
-            makeStartNodeEndNode(TargetObject.transform.position);
+                makeStartNodeEndNode(TargetObject.transform.position);
+                FindList.Clear();
 
-            PushOpenList(StartNode);
-            findWay();
+                PushOpenList(StartNode);
+                findWay();
 
-            _openPq.Clear();
-            _openList.Clear();
-            _closedList.Clear();
+                _openPq.Clear();
+                _openList.Clear();
+                _closedList.Clear();
+            }
         }
     }
     // 생성은 스타트 노드 기준으로 잡는다.
@@ -75,54 +82,67 @@ public class AStar : MonoBehaviour
         StartNode = new AStarNode(null, new Vector3Int(0, 0, 0), transform.position, 0, 0);
 
         Vector3 interval = StartNode.NodePosition - targetPosition;
-        int[] h = getG(interval);
+        Vector3Int nodeInterval = convertNodePointIntervalFromInterval(interval);
 
-        int x = h[0];
-        int z = h[1];
+        Vector3Int endNodePoint = new Vector3Int(interval.x > 0 ? -nodeInterval.x : nodeInterval.x, 0, 
+                                                 interval.z > 0 ? -nodeInterval.z : nodeInterval.z);
 
-        Vector3Int endNodePoint = new Vector3Int(interval.x > 0 ? -x : x, 0, interval.z > 0 ? -z : z);
-        StartNode.Heuristics = (Mathf.Abs(endNodePoint.x) + Mathf.Abs(endNodePoint.z)) * COST;
-
+        StartNode.Heuristics = (nodeInterval.x + nodeInterval.z) * COST;
         EndNode = new AStarNode(null, endNodePoint, StartNode.NodePosition + new Vector3(endNodePoint.x, 0.0f, endNodePoint.z) * SIZE, 0, 0);
     }
     private void findWay()
     {
-        AStarNode pivotNode = PopOpenList();
+        AStarNode pivotNode = null;
 
-        if (Vector3.Distance(pivotNode.NodePosition, EndNode.NodePosition) < SIZE * 0.5f)
+        for (pivotNode = PopOpenList(); Vector3.Distance(pivotNode.NodePosition, EndNode.NodePosition) >= SIZE * 0.5f; pivotNode = PopOpenList())
         {
-            while (!ReferenceEquals(pivotNode.Parent, null))
+            if (!Physics.Raycast(pivotNode.NodePosition,
+                (EndNode.NodePosition - pivotNode.NodePosition).normalized,
+                Vector3.Distance(pivotNode.NodePosition, EndNode.NodePosition)
+                , 1 << LayerMask.NameToLayer("Wall")))
             {
-                FindList.Add(pivotNode);
-                pivotNode = pivotNode.Parent;
+                EndNode.Parent = pivotNode;
+                pivotNode = EndNode;
+                break;
             }
 
-            return;
+            if (!_closedList.Contains(pivotNode.NodePoint))
+            {
+                _closedList.Add(pivotNode.NodePoint);
+
+                if (checkMakeAndAStarNode(pivotNode, out AStarNode centerTopNode, new Vector3Int(0, 0, 1), pivotNode.G + COST))
+                    PushOpenList(centerTopNode);
+                if (checkMakeAndAStarNode(pivotNode, out AStarNode leftCenterNode, new Vector3Int(1, 0, 0), pivotNode.G + COST))
+                    PushOpenList(leftCenterNode);
+                if (checkMakeAndAStarNode(pivotNode, out AStarNode rightCenterNode, new Vector3Int(-1, 0, 0), pivotNode.G + COST))
+                    PushOpenList(rightCenterNode);
+                if (checkMakeAndAStarNode(pivotNode, out AStarNode centerBottomNode, new Vector3Int(0, 0, -1), pivotNode.G + COST))
+                    PushOpenList(centerBottomNode);
+                if (checkMakeAndAStarNode(pivotNode, out AStarNode leftTopNode, new Vector3Int(1, 0, 1), pivotNode.G + DIAGONAL_COST))
+                    PushOpenList(leftTopNode);
+                if (checkMakeAndAStarNode(pivotNode, out AStarNode rightTopNode, new Vector3Int(-1, 0, 1), pivotNode.G + DIAGONAL_COST))
+                    PushOpenList(rightTopNode);
+                if (checkMakeAndAStarNode(pivotNode, out AStarNode leftBottomNode, new Vector3Int(1, 0, -1), pivotNode.G + DIAGONAL_COST))
+                    PushOpenList(leftBottomNode);
+                if (checkMakeAndAStarNode(pivotNode, out AStarNode rightBottomNode, new Vector3Int(-1, 0, -1), pivotNode.G + DIAGONAL_COST))
+                    PushOpenList(rightBottomNode);
+            }
         }
 
-        if (!_closedList.ContainsKey(pivotNode.NodePoint))
+        AStarNode temp = pivotNode;
+        while (!ReferenceEquals(pivotNode.Parent, null))
         {
-            _closedList.Add(pivotNode.NodePoint, pivotNode);
+            if (Physics.Raycast(pivotNode.Parent.NodePosition,
+                (temp.NodePosition - pivotNode.Parent.NodePosition).normalized,
+                Vector3.Distance(temp.NodePosition, pivotNode.Parent.NodePosition),
+                1 << LayerMask.NameToLayer("Wall")))
+            {
+                temp = pivotNode;
+                FindList.Push(pivotNode);
+            }
 
-            if (checkMakeAndAStarNode(pivotNode, out AStarNode centerTopNode, new Vector3Int(0, 0, 1), pivotNode.G + COST))
-                PushOpenList(centerTopNode);
-            if (checkMakeAndAStarNode(pivotNode, out AStarNode leftCenterNode, new Vector3Int(1, 0, 0), pivotNode.G + COST))
-                PushOpenList(leftCenterNode);
-            if (checkMakeAndAStarNode(pivotNode, out AStarNode rightCenterNode, new Vector3Int(-1, 0, 0), pivotNode.G + COST))
-                PushOpenList(rightCenterNode);
-            if (checkMakeAndAStarNode(pivotNode, out AStarNode centerBottomNode, new Vector3Int(0, 0, -1), pivotNode.G + COST))
-                PushOpenList(centerBottomNode);
-            if (checkMakeAndAStarNode(pivotNode, out AStarNode leftTopNode, new Vector3Int(1, 0, 1), pivotNode.G + DIAGONAL_COST))
-                PushOpenList(leftTopNode);
-            if (checkMakeAndAStarNode(pivotNode, out AStarNode rightTopNode, new Vector3Int(-1, 0, 1), pivotNode.G + DIAGONAL_COST))
-                PushOpenList(rightTopNode);
-            if (checkMakeAndAStarNode(pivotNode, out AStarNode leftBottomNode, new Vector3Int(1, 0, -1), pivotNode.G + DIAGONAL_COST))
-                PushOpenList(leftBottomNode);
-            if (checkMakeAndAStarNode(pivotNode, out AStarNode rightBottomNode, new Vector3Int(-1, 0, -1), pivotNode.G + DIAGONAL_COST))
-                PushOpenList(rightBottomNode);
+            pivotNode = pivotNode.Parent;
         }
-
-        findWay();
     }
     private void PushOpenList(AStarNode node)
     {
@@ -136,55 +156,43 @@ public class AStar : MonoBehaviour
 
         return node;
     }
+    // pivotNode 기준으로 nodePoint를 받아와 해당 위치에 새로운 노드 생성 또는 기존 노드가 존재한다면 경로 개선
     private bool checkMakeAndAStarNode(AStarNode pivotNode, out AStarNode newNode, Vector3Int nodePoint, int g)
     {
         Vector3 position = pivotNode.NodePosition + (Vector3)nodePoint * SIZE;
         Vector3Int newNodePoint = pivotNode.NodePoint + nodePoint;
 
-        float distance = Vector3.Distance(pivotNode.NodePosition, position);
+        newNode = null;
 
         // closedList에 이미 요소가 들어있거나, 생성할 노드의 위치에 다른 어떤 물체가 있다면?
-        
-        if (_closedList.ContainsKey(newNodePoint) ||
-             Physics.CheckSphere(
-                 pivotNode.NodePosition,
-                 SIZE,
-                 1 << LayerMask.NameToLayer("Wall"))
-             )
-        {
-            newNode = null;
+        if (_closedList.Contains(newNodePoint) || Physics.CheckSphere(position, SIZE, 1 << LayerMask.NameToLayer("Wall")))
             return false;
-        }
 
-        // 경로 개선
+        // 새로 만들고자 하는 노드의 위치가 이미 오픈리스트에 존재한다면? 경로 개선을 한다.
         if (_openList.TryGetValue(newNodePoint, out AStarNode oldNode))
         {
-            int[] goal = getG(pivotNode.NodePosition - position);
-
-            int goalSum = goal[0] + goal[1];
-
-            if (newG < oldNode.G)
+            if (g < oldNode.G)
             {
                 oldNode.Parent = pivotNode;
-                oldNode.G = newG;
+                oldNode.G = g;
             }
 
-            newNode = null;
             return false;
         }
-        else
-        {
-            int[] h = getG(EndNode.NodePosition - position);
-            newNode = new AStarNode(pivotNode, newNodePoint, position, g, (h[0] + h[1]) * COST);
 
-            return true;
-        }
+        newNode = new AStarNode(pivotNode, newNodePoint, position, g, getManhattanDistance(EndNode.NodePosition - position) * COST);
+        return true;
     }
-    private int[] getG(Vector3 interval)
+    private int getManhattanDistance(Vector3 interval)
+    {
+        Vector3Int nodeInterval = convertNodePointIntervalFromInterval(interval);
+        return nodeInterval.x + nodeInterval.z;
+    }
+    private Vector3Int convertNodePointIntervalFromInterval(Vector3 interval)
     {
         int x = Mathf.RoundToInt(Mathf.Abs(interval.x) / SIZE);
         int z = Mathf.RoundToInt(Mathf.Abs(interval.z) / SIZE);
 
-        return new int[2] { x, z };
+        return new Vector3Int(x, 0, z);
     }
 }

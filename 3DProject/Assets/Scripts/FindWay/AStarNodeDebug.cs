@@ -8,7 +8,6 @@ public class AStarNodeDebug : MonoBehaviour
     private const int END = 1;
     private const int VERTEX_COUNT = 8;
 
-    private List<Vector3[]> _vertices = new List<Vector3[]>();
     private List<Vector3[]> _pivotNodes = new List<Vector3[]>() { new Vector3[VERTEX_COUNT], new Vector3[VERTEX_COUNT] };
     private List<Vector3[]> _findNodes = new List<Vector3[]>();
 
@@ -26,20 +25,27 @@ public class AStarNodeDebug : MonoBehaviour
     }
     private void Update()
     {
+        if (!_aStar.IsFind && _isFind)
+            _isFind = false;
+
         if (_aStar.IsFind && !_isFind)
         {
-            foreach (AStarNode node in _aStar.FindList)
+            AStarNode[] findArray = _aStar.FindList.ToArray();
+
+            _findNodes.Clear();
+
+            foreach (AStarNode node in findArray)
                 _findNodes.Add(createVertices(convertNodePoint(node)));
 
             _pivotNodes[START] = createVertices(convertNodePoint(_aStar.StartNode));
-            _pivotNodes[END]   = createVertices(convertNodePoint(_aStar.EndNode));
+            _pivotNodes[END] = createVertices(convertNodePoint(_aStar.EndNode));
         }
 
         foreach (Vector3[] vertices in _findNodes)
             drawBox(vertices, Color.green);
 
         drawBox(_pivotNodes[START], Color.blue);
-        drawBox(_pivotNodes[END],   Color.red);
+        drawBox(_pivotNodes[END], Color.red);
 
         _isFind = _aStar.IsFind;
     }
