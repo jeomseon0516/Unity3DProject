@@ -70,7 +70,7 @@ public class PriorityQueue<T> where T : IComparable<T>
                 break;
 
             T temp = _heap[nowIndex];
-            _heap[nowIndex] = _heap[nextIndex];
+            _heap[nowIndex]  = _heap[nextIndex];
             _heap[nextIndex] = temp;
 
             nowIndex = nextIndex;

@@ -4,12 +4,12 @@ using UnityEngine;
 
 public class AStarNodeDebug : MonoBehaviour
 {
+    private const int VERTEX_COUNT = 8;
     private const int START = 0;
     private const int END = 1;
-    private const int VERTEX_COUNT = 8;
 
     private List<Vector3[]> _pivotNodes = new List<Vector3[]>() { new Vector3[VERTEX_COUNT], new Vector3[VERTEX_COUNT] };
-    private List<Vector3[]> _findNodes = new List<Vector3[]>();
+    private List<Vector3[]> _findNodes  = new List<Vector3[]>();
 
     private bool _isFind;
     public AStar _aStar { get; private set; }
@@ -38,14 +38,21 @@ public class AStarNodeDebug : MonoBehaviour
                 _findNodes.Add(createVertices(convertNodePoint(node)));
 
             _pivotNodes[START] = createVertices(convertNodePoint(_aStar.StartNode));
-            _pivotNodes[END] = createVertices(convertNodePoint(_aStar.EndNode));
+            _pivotNodes[END]   = createVertices(convertNodePoint(_aStar.EndNode));
         }
+
+        AStarNode[] findNodes = _aStar.FindList.ToArray();
+
+        for (int i = 0; i < findNodes.Length - 1; ++i)
+            Debug.DrawRay(findNodes[i].NodePosition, 
+                (findNodes[i + 1].NodePosition - findNodes[i].NodePosition).normalized * Vector3.Distance(findNodes[i + 1].NodePosition, findNodes[i].NodePosition), 
+                Color.red);
 
         foreach (Vector3[] vertices in _findNodes)
             drawBox(vertices, Color.green);
 
         drawBox(_pivotNodes[START], Color.blue);
-        drawBox(_pivotNodes[END], Color.red);
+        drawBox(_pivotNodes[END],   Color.red);
 
         _isFind = _aStar.IsFind;
     }
