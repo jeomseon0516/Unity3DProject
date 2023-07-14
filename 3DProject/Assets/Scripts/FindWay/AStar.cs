@@ -41,49 +41,48 @@ public class AStar : MonoBehaviour
     private HashSet<Vector3Int> _closedList = new HashSet<Vector3Int>(); // 키값을 어떻게 가져야만 할까?...
     private Dictionary<Vector3Int, AStarNode> _openList = new Dictionary<Vector3Int, AStarNode>(); // 이미 오픈리스트에 있는 경우 경로 개선을 위해 딕셔너리를 사용
     private PriorityQueue<AStarNode> _openPq  = new PriorityQueue<AStarNode>();
-    public Stack<AStarNode> FindList { get; } = new Stack<AStarNode>(); // 찾아낸 노드를 순차적으로 가져와 이동할 것이므로 스택을 사용
+    private Stack<AStarNode> _findList = new Stack<AStarNode>(); // 찾아낸 노드를 순차적으로 가져와 이동할 것이므로 스택을 사용
     [field:SerializeField] public GameObject TargetObject { get; set; }
-    public bool IsFind { get; private set; }
     public bool IsMove { get; private set; }
-    public AStarNode StartNode { get; private set; } 
-    public AStarNode EndNode { get; private set; }
+    private AStarNode _startNode;
+    private AStarNode _endNode;
 
     private void Start()
     {
-        IsFind = false;
+        IsMove = false;
     }
-    private void Update()
+    private void FixedUpdate()
     {
-        if (IsFind)
-            IsFind = false;
+        if (TryGetComponent(out AStarNodeDebug debug))
+            debug.DrawBox(_findList.ToArray());
     }
     // 생성은 스타트 노드 기준으로 잡는다.
     private void makeStartNodeEndNode(Vector3 targetPosition)
     {
-        StartNode = new AStarNode(null, new Vector3Int(0, 0, 0), transform.position, 0, 0);
+        _startNode = new AStarNode(null, new Vector3Int(0, 0, 0), transform.position, 0, 0);
 
-        Vector3 interval = StartNode.NodePosition - targetPosition;
-        Vector3Int nodeInterval = convertNodePointIntervalFromInterval(interval);
+        Vector3 interval = _startNode.NodePosition - targetPosition;
+        Vector3Int nodeInterval = convertIntervalToNodePointInterval(interval);
 
         Vector3Int endNodePoint = new Vector3Int(interval.x > 0 ? -nodeInterval.x : nodeInterval.x, 0, 
                                                  interval.z > 0 ? -nodeInterval.z : nodeInterval.z);
 
-        StartNode.Heuristics = (nodeInterval.x + nodeInterval.z) * COST;
-        EndNode = new AStarNode(null, endNodePoint, StartNode.NodePosition + new Vector3(endNodePoint.x, 0.0f, endNodePoint.z) * SIZE, 0, 0);
+        _startNode.Heuristics = (nodeInterval.x + nodeInterval.z) * COST;
+        _endNode = new AStarNode(null, endNodePoint, _startNode.NodePosition + new Vector3(endNodePoint.x, 0.0f, endNodePoint.z) * SIZE, 0, 0);
     }
     private void findWay()
     {
-        AStarNode pivotNode = null;
+        AStarNode pivotNode = popOpenList();
 
-        for (pivotNode = popOpenList(); Vector3.Distance(pivotNode.NodePosition, EndNode.NodePosition) >= SIZE * 0.5f; pivotNode = popOpenList())
+        while (Vector3.Distance(pivotNode.NodePosition, _endNode.NodePosition) >= SIZE * 0.5f)
         {
             if (!Physics.Raycast(pivotNode.NodePosition,
-                (EndNode.NodePosition - pivotNode.NodePosition).normalized,
-                Vector3.Distance(pivotNode.NodePosition, EndNode.NodePosition), 
+                (_endNode.NodePosition - pivotNode.NodePosition).normalized,
+                Vector3.Distance(pivotNode.NodePosition, _endNode.NodePosition), 
                 1 << LayerMask.NameToLayer("Wall")))
             {
-                EndNode.Parent = pivotNode;
-                pivotNode = EndNode;
+                _endNode.Parent = pivotNode;
+                pivotNode = _endNode;
                 break;
             }
 
@@ -103,10 +102,12 @@ public class AStar : MonoBehaviour
             decideMakingNode(pivotNode, new Vector3Int(-1, 0,  1), diagonalCost);
             decideMakingNode(pivotNode, new Vector3Int( 1, 0, -1), diagonalCost);
             decideMakingNode(pivotNode, new Vector3Int(-1, 0, -1), diagonalCost);
+
+            pivotNode = popOpenList();
         }
 
         AStarNode temp = pivotNode;
-        FindList.Push(pivotNode);
+        _findList.Push(pivotNode);
 
         while (!ReferenceEquals(pivotNode.Parent, null))
         {
@@ -116,7 +117,7 @@ public class AStar : MonoBehaviour
                 1 << LayerMask.NameToLayer("Wall")))
             {
                 temp = pivotNode;
-                FindList.Push(pivotNode);
+                _findList.Push(pivotNode);
             }
 
             pivotNode = pivotNode.Parent;
@@ -164,15 +165,15 @@ public class AStar : MonoBehaviour
             return false;
         }
 
-        newNode = new AStarNode(pivotNode, nodePoint, position, g, getManhattanDistance(EndNode.NodePosition - position) * COST);
+        newNode = new AStarNode(pivotNode, nodePoint, position, g, getManhattanDistance(_endNode.NodePosition - position) * COST);
         return true;
     }
     private int getManhattanDistance(Vector3 interval)
     {
-        Vector3Int nodeInterval = convertNodePointIntervalFromInterval(interval);
+        Vector3Int nodeInterval = convertIntervalToNodePointInterval(interval);
         return nodeInterval.x + nodeInterval.z;
     }
-    private Vector3Int convertNodePointIntervalFromInterval(Vector3 interval)
+    private Vector3Int convertIntervalToNodePointInterval(Vector3 interval)
     {
         int x = Mathf.RoundToInt(Mathf.Abs(interval.x) / SIZE);
         int z = Mathf.RoundToInt(Mathf.Abs(interval.z) / SIZE);
@@ -181,26 +182,25 @@ public class AStar : MonoBehaviour
     }
     public void FindPath()
     {
-        if (IsFind) return;
-
-        IsFind = true;
-
         makeStartNodeEndNode(TargetObject.transform.position);
-        FindList.Clear();
+        _findList.Clear();
 
-        pushOpenList(StartNode);
+        pushOpenList(_startNode);
         findWay();
 
         _openPq.Clear();
         _openList.Clear();
         _closedList.Clear();
+
+        if (TryGetComponent(out AStarNodeDebug debug))
+            debug.UpdateGizmo(_findList.ToArray(), _startNode, _endNode, SIZE);
     }
     public bool ContainWays() 
     { 
-        return FindList.Count > 0; 
+        return _findList.Count > 0; 
     }
     public Vector3 GetMoveNext()
     {
-        return FindList.Pop().NodePosition;
+        return _findList.Pop().NodePosition;
     }
 }

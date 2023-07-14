@@ -9,52 +9,33 @@ public class AStarNodeDebug : MonoBehaviour
     private const int END = 1;
 
     private List<Vector3[]> _pivotNodes = new List<Vector3[]>() { new Vector3[VERTEX_COUNT], new Vector3[VERTEX_COUNT] };
-    private List<Vector3[]> _findNodes  = new List<Vector3[]>();
+    private List<Vector3[]> _findNodes = new List<Vector3[]>();
 
     private bool _isFind;
-    public AStar _aStar { get; private set; }
 
-    private void Awake()
+    public void DrawBox(AStarNode[] findNodes)
     {
-        TryGetComponent(out AStar aStar);
-        _aStar = aStar;
-    }
-    private void Start()
-    {
-        _isFind = false;
-    }
-    private void Update()
-    {
-        if (!_aStar.IsFind && _isFind)
-            _isFind = false;
-
-        if (_aStar.IsFind && !_isFind)
-        {
-            AStarNode[] findArray = _aStar.FindList.ToArray();
-
-            _findNodes.Clear();
-
-            foreach (AStarNode node in findArray)
-                _findNodes.Add(createVertices(convertNodePoint(node)));
-
-            _pivotNodes[START] = createVertices(convertNodePoint(_aStar.StartNode));
-            _pivotNodes[END]   = createVertices(convertNodePoint(_aStar.EndNode));
-        }
-
-        AStarNode[] findNodes = _aStar.FindList.ToArray();
-
         for (int i = 0; i < findNodes.Length - 1; ++i)
-            Debug.DrawRay(findNodes[i].NodePosition, 
-                (findNodes[i + 1].NodePosition - findNodes[i].NodePosition).normalized * Vector3.Distance(findNodes[i + 1].NodePosition, findNodes[i].NodePosition), 
+            Debug.DrawRay(findNodes[i].NodePosition,
+                (findNodes[i + 1].NodePosition - findNodes[i].NodePosition).normalized * Vector3.Distance(findNodes[i + 1].NodePosition, findNodes[i].NodePosition),
                 Color.red);
 
         foreach (Vector3[] vertices in _findNodes)
             drawBox(vertices, Color.green);
 
         drawBox(_pivotNodes[START], Color.blue);
-        drawBox(_pivotNodes[END],   Color.red);
+        drawBox(_pivotNodes[END], Color.red);
+    }
+    // .. Stack -> ToArray..
+    public void UpdateGizmo(AStarNode[] findNodes, AStarNode startNode, AStarNode endNode, float size)
+    {
+        _findNodes.Clear();
 
-        _isFind = _aStar.IsFind;
+        foreach (AStarNode node in findNodes)
+            _findNodes.Add(createVertices(convertNodePoint(node, size), size));
+
+        _pivotNodes[START] = createVertices(convertNodePoint(startNode, size), size);
+        _pivotNodes[END] = createVertices(convertNodePoint(endNode, size), size);
     }
 
     private void drawBox(Vector3[] vertices, Color color)
@@ -66,25 +47,25 @@ public class AStarNodeDebug : MonoBehaviour
             Debug.DrawLine(vertices[i + 4], vertices[(i + 1) % 4 + 4], color);
         }
     }
-    private Vector3 convertNodePoint(AStarNode node)
+    private Vector3 convertNodePoint(AStarNode node, float size)
     {
         return new Vector3(
-            node.NodePosition.x - _aStar.SIZE * 0.5f,
-            node.NodePosition.y - _aStar.SIZE * 0.5f,
-            node.NodePosition.z - _aStar.SIZE * 0.5f);
+            node.NodePosition.x - size * 0.5f,
+            node.NodePosition.y - size * 0.5f,
+            node.NodePosition.z - size * 0.5f);
     }
-    private Vector3[] createVertices(Vector3 pivotPosition)
+    private Vector3[] createVertices(Vector3 pivotPosition, float size)
     {
         Vector3[] vertices = new Vector3[VERTEX_COUNT];
 
         vertices[0] = pivotPosition;
-        vertices[1] = pivotPosition + new Vector3(_aStar.SIZE, 0.0f, 0.0f);
-        vertices[2] = pivotPosition + new Vector3(_aStar.SIZE, 0.0f, _aStar.SIZE);
-        vertices[3] = pivotPosition + new Vector3(0.0f, 0.0f, _aStar.SIZE);
-        vertices[4] = pivotPosition + new Vector3(0.0f, _aStar.SIZE, 0.0f);
-        vertices[5] = pivotPosition + new Vector3(_aStar.SIZE, _aStar.SIZE, 0.0f);
-        vertices[6] = pivotPosition + new Vector3(_aStar.SIZE, _aStar.SIZE, _aStar.SIZE);
-        vertices[7] = pivotPosition + new Vector3(0.0f, _aStar.SIZE, _aStar.SIZE);
+        vertices[1] = pivotPosition + new Vector3(size, 0.0f, 0.0f);
+        vertices[2] = pivotPosition + new Vector3(size, 0.0f, size);
+        vertices[3] = pivotPosition + new Vector3(0.0f, 0.0f, size);
+        vertices[4] = pivotPosition + new Vector3(0.0f, size, 0.0f);
+        vertices[5] = pivotPosition + new Vector3(size, size, 0.0f);
+        vertices[6] = pivotPosition + new Vector3(size, size, size);
+        vertices[7] = pivotPosition + new Vector3(0.0f, size, size);
 
         return vertices;
     }

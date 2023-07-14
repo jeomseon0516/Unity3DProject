@@ -40,12 +40,10 @@ public partial class EnemyController : MonoBehaviour
     {
         if (Vector3.Distance(_targetPoint, transform.position) < 0.1f)
         {
-
-
-            _targetPoint = _aStar.GetMoveNext();
-
             if (!_aStar.ContainWays())
                 _aStar.FindPath();
+
+            _targetPoint = _aStar.GetMoveNext();
         }
 
         Vector3 direction = (_targetPoint - transform.position).normalized;
