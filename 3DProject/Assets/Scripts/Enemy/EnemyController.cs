@@ -28,6 +28,7 @@ public partial class EnemyController : MonoBehaviour
 
         _speed = 5.0f;
 
+        _aStar.Size = 0.6f;
         _aStar.TargetObject = GameObject.Find("Character");
         _aStar.FindPath();
         _targetPoint = _aStar.GetMoveNext();

@@ -59,6 +59,7 @@
     <Compile Include="Assets\Visual Design Cafe\ShaderX\Editor\TemplateXImporterWrapper.cs" />
     <Compile Include="Assets\Visual Design Cafe\ShaderX\Editor\ShaderXImporterEditorWrapper.cs" />
     <Compile Include="Assets\Visual Design Cafe\ShaderX\Editor\ShaderXImporterWrapper.cs" />
+    <Compile Include="Assets\Editor\CreateObjectFolder.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
