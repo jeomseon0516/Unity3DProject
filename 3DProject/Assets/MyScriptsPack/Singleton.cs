@@ -30,20 +30,20 @@ public abstract class Singleton<T> : SingletonBase<Singleton<T>> where T : Singl
     {
         get
         {
-            CreateInstance(() => { instance = new GameObject().AddComponent<T>(); });
+            createInstance(() => { instance = new GameObject().AddComponent<T>(); });
             return instance;
         }
     }
 
     protected override sealed void Awake()
     {
-        if (CreateInstance(() => { TryGetComponent(out instance); }))
+        if (createInstance(() => { TryGetComponent(out instance); }))
             Destroy(gameObject);
 
         DontDestroyOnLoad(gameObject);
     }
 
-    private static bool CreateInstance(Action action)
+    private static bool createInstance(Action action)
     {
         if (ReferenceEquals(instance, null) || !instance)
         {

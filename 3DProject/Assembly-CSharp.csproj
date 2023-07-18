@@ -77,14 +77,16 @@
     <Compile Include="Assets\Scripts\FindWay\AStar.cs" />
     <Compile Include="Assets\Scripts\DynamicObject.cs" />
     <Compile Include="Assets\WayPoint\Editors\WayPoint.cs" />
-    <Compile Include="Assets\Scripts\Character\CharacterController.cs" />
+    <Compile Include="Assets\Scripts\Objects\Character\CharacterController.cs" />
     <Compile Include="Assets\Scripts\Manager\RendererManager.cs" />
     <Compile Include="Assets\MyScriptsPack\ObjectPoolManager.cs" />
-    <Compile Include="Assets\Scripts\Enemy\EnemyController.cs" />
+    <Compile Include="Assets\Scripts\Objects\Enemy\EnemyController.cs" />
     <Compile Include="Assets\MyScriptsPack\YieldCache.cs" />
     <Compile Include="Assets\Scripts\Gizmo\MyGizmo.cs" />
     <Compile Include="Assets\MyScriptsPack\CustomMath.cs" />
     <Compile Include="Assets\Visual Design Cafe\Nature Renderer Demo\Scripts\OpenWebsiteButton.cs" />
+    <Compile Include="Assets\Scripts\Objects\WorldCollision.cs" />
+    <Compile Include="Assets\MyScriptsPack\VerticesTo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Visual Design Cafe\ShaderX\Templates\Common\Platforms\GLES3.hlsl" />
