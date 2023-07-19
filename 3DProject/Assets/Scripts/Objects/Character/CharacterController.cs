@@ -9,6 +9,9 @@ public partial class CharacterController : DynamicObject
 
     private float _defaultSpeed;
     private float _runSpeed;
+    private float _jumpValue;
+
+    private WorldCollision _worldCollision;
 
     private void FixedUpdate()
     {
@@ -17,18 +20,31 @@ public partial class CharacterController : DynamicObject
     protected override void CustomAwake()
     {
         GameObject.Find("Main Camera").TryGetComponent(out _mainCamera);
+
+        TryGetComponent(out _worldCollision);
         TryGetComponent(out _animator);
     }
     protected override void Init()
     {
         _defaultSpeed = _speed = 6.0f;
         _runSpeed = _speed * 1.5f;
+        _jumpValue = 0.0f;
     }
     protected override void CustomUpdate()
     {
         Direction = new Vector3(Input.GetAxis("Horizontal"), 0.0f, Input.GetAxis("Vertical"));
 
+        // 애니메이션 결정
         decideAnimationState();
+
+        if (!_worldCollision.OnPlaneCollision)
+        {
+            
+        }
+        else
+        {
+            _jumpValue = 0.0f;
+        }
 
         if (Mathf.Abs(Input.GetAxisRaw("Horizontal")) > 0 || 
             Mathf.Abs(Input.GetAxisRaw("Vertical"))   > 0)
@@ -50,6 +66,11 @@ public partial class CharacterController : DynamicObject
         {
             _animator.SetBool("isSprint", false);
             _animator.speed = 1;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+
         }
 
         _speed = !Input.GetKey(KeyCode.LeftShift) ? _defaultSpeed : _runSpeed; 
