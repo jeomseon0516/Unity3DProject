@@ -104,9 +104,6 @@ public class AStar : MonoBehaviour
                 break;
             }
 
-            if (_closedList.Contains(pivotNode.NodePoint))
-                continue;
-
             _closedList.Add(pivotNode.NodePoint);
 
             int cost = pivotNode.G + COST;
@@ -157,7 +154,7 @@ public class AStar : MonoBehaviour
 
         if (_openList.TryGetValue(newNodePoint, out AStarNode node))
         {
-            if (cost < node.G) // 경로 개선
+            if (cost < node.G) // .. 경로 개선
             {
                 node.Parent = pivotNode;
                 node.G = cost;
