@@ -6,11 +6,11 @@ using UnityEngine;
 public class AStarNode : IComparable<AStarNode>
 {
     public AStarNode Parent { get; set; }
-    public Vector3Int NodePoint { get; set; } // 노드의 포인트 Key값으로 쓰인다.
+    public Vector3Int NodePoint { get; set; } // .. 노드의 포인트 Key값으로 쓰인다.
     public Vector3 NodePosition { get; set; }
-    public int Cost { get => G + Heuristics; } // F
-    public int G { get; set; } // G
-    public int Heuristics { get; set; } // H
+    public int Cost { get => G + Heuristics; } // .. F
+    public int G { get; set; } // .. G
+    public int Heuristics { get; set; } // .. H
     public AStarNode(AStarNode parent, Vector3Int nodePoint, Vector3 nodePosition, int g, int heuristics)
     {
         Parent = parent;
@@ -19,24 +19,24 @@ public class AStarNode : IComparable<AStarNode>
         Heuristics = heuristics;
         G = g;
     }
-    // 1이 true -1 이 false // 현재 
+    // .. 1이 true -1 이 false // 현재 
     public int CompareTo(AStarNode other)
     {
         return other.Cost > Cost ? 1 : -1;
     }
 }
 
-// 모든 객체가 길을 찾아야할 필요가 있을까?
-// pivot객체를 설정해서 주변에 있는 가까운 객체들을 pivot객체를 팔로우하고 pivot이 찾은 노드를 따라 움직일 수 있다.
+// .. 모든 객체가 길을 찾아야할 필요가 있을까?
+// .. pivot객체를 설정해서 주변에 있는 가까운 객체들을 pivot객체를 팔로우하고 pivot이 찾은 노드를 따라 움직일 수 있다.
 #if UNITY_EDITOR_WIN
 [RequireComponent(typeof(AStarNodeDebug))]
 #endif
 public class AStar : MonoBehaviour
 {
-    private const int COST = 10; // 직선 코스트
-    private const int DIAGONAL_COST = 14; // 평면상의 대각선 코스트
-    private const int VERTICAL_DIAGONAL_COST = 18; // 3차원 상의 대각선 코스트
-    public float Size { get; set; } // 복셀의 해상도라고 생각하여야 한다. 사이즈가 작아질 수록 연산량이 기하급수적으로 커지기 때문에 잘 사용하여야 한다.
+    private const int COST = 10; // .. 직선 코스트
+    private const int DIAGONAL_COST = 14; // .. 평면상의 대각선 코스트
+    private const int VERTICAL_DIAGONAL_COST = 18; // .. 3차원 상의 대각선 코스트
+    public float Size { get; set; } // .. 복셀의 해상도라고 생각하여야 한다. 사이즈가 작아질 수록 연산량이 기하급수적으로 커지기 때문에 잘 사용하여야 한다.
 
     /* 
      * .. 부동 소수점 문제로 노드 자체의 Vector3를 Key로 가지고 있다면 문제가 생길 수 있기때문에 Vector3Int로 관리
@@ -55,7 +55,7 @@ public class AStar : MonoBehaviour
     private PriorityQueue<AStarNode> _openPq = new PriorityQueue<AStarNode>();
     // .. 찾아낸 노드를 순차적으로 가져와 이동할 것이므로 스택을 사용
     private Stack<AStarNode> _findList = new Stack<AStarNode>(); 
-    [field: SerializeField] public GameObject TargetObject { get; set; } // .. 타겟이 될 오브젝트 또는 타겟이 될 (Vector3) 좌표를 가지고 있는다.
+    [field:SerializeField] public GameObject TargetObject { get; set; } // .. 타겟이 될 오브젝트 또는 타겟이 될 (Vector3) 좌표를 가지고 있는다.
     public bool IsMove { get; private set; }
 
     // .. 탐색을 시작할 노드
