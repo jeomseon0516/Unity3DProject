@@ -51,17 +51,17 @@ public class AStar : MonoBehaviour
      */
 
     private Dictionary<Vector3Int, AStarNode> _openList = new Dictionary<Vector3Int, AStarNode>(); 
-    // .. 우선순위 큐로 항상 가장 최적의 값을 찾아온다.  
+    // .. 우선순위 큐로 항상 추정 비용이 가장 적은 노드의 값을 찾아온다.  
     private PriorityQueue<AStarNode> _openPq = new PriorityQueue<AStarNode>();
     // .. 찾아낸 노드를 순차적으로 가져와 이동할 것이므로 스택을 사용
     private Stack<AStarNode> _findList = new Stack<AStarNode>(); 
-    [field:SerializeField] public GameObject TargetObject { get; set; } // .. 타겟이 될 오브젝트 또는 타겟이 될 (Vector3) 좌표를 가지고 있는다.
-    public bool IsMove { get; private set; }
-
     // .. 탐색을 시작할 노드
     private AStarNode _startNode;
     // .. 탐색을 끝낼때 사용할 노드
     private AStarNode _endNode;
+    // .. 타겟이 될 오브젝트 또는 타겟이 될 (Vector3) 좌표를 가지고 있는다.
+    [field:SerializeField] public GameObject TargetObject { get; set; } 
+    public bool IsMove { get; private set; }
 
     private void Start()
     {
@@ -97,7 +97,7 @@ public class AStar : MonoBehaviour
             if (!Physics.Raycast(pivotNode.NodePosition,
                 (_endNode.NodePosition - pivotNode.NodePosition).normalized,
                 Vector3.Distance(pivotNode.NodePosition, _endNode.NodePosition),
-                1 << LayerMask.NameToLayer("Wall"))) // 엔드노드까지 레이캐스트 장애물이 존재하지 않을 경우 해당 노드까지가 베스트 경로 이므로 길찾기 종료 
+                1 << LayerMask.NameToLayer("Wall"))) // .. 엔드노드까지 레이캐스트 장애물이 존재하지 않을 경우 해당 노드까지가 베스트 경로 이므로 길찾기 종료 
             {
                 _endNode.Parent = pivotNode;
                 pivotNode = _endNode;
@@ -128,7 +128,7 @@ public class AStar : MonoBehaviour
         {
             /* 
              * .. 불필요한 경로 제거 복셀 데이터로 길찾기를 하기 때문에 A*만으로 찾은 경로는 최단거리가 아님 
-             * 직선 거리가 항상 최단 거리 라는 점을 이용해 레이캐스트 현재 노드의 부모 노드가 레이캐스트를 하는 기준이 되는 노드 사이에 만약 장애물이 없으면 스택에 넣지 않음 
+             * 직선 거리가 항상 최단 거리 라는 점을 이용해 레이를 쏴 현재 노드의 부모 노드가 레이캐스트를 하는 기준이 되는 노드 사이에 만약 장애물이 없으면 스택에 넣지 않음 
              * 만약 장애물이 존재한다면 기준이 되는 노드 갱신 후 피벗 노드는 Push해줌
              * 해당 방식을 이용하면 최단 거리가 나오게 된다.
              */
@@ -144,9 +144,11 @@ public class AStar : MonoBehaviour
             pivotNode = pivotNode.Parent;
         }
     }
+
+    // .. 노드를 만들어야 할 때 노드는 클래스이므로 가비지 생성을 방지하기 위해 포지션 값으로 노드가 있는지 없는지 검사후 최종적으로 노드를 생성한다.
     private void decideMakingNode(AStarNode pivotNode, Vector3Int nodePoint, int cost)
     {
-        Vector3 position = pivotNode.NodePosition + (Vector3)nodePoint * Size; // 새로 생성한 노드의 포지션이 될 값
+        Vector3 position = pivotNode.NodePosition + (Vector3)nodePoint * Size; // .. 새로 생성한 노드의 포지션이 될 값
         Vector3Int newNodePoint = pivotNode.NodePoint + nodePoint;
 
         if (_closedList.Contains(newNodePoint) || Physics.CheckSphere(position, Size, 1 << LayerMask.NameToLayer("Wall")))
