@@ -1,13 +1,35 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
+using NPresetData;
+
+namespace NPresetData
+{
+    [System.Serializable]
+    public class PresetData
+    {
+        public readonly Dictionary<string, string> presetData;
+
+        public PresetData(Dictionary<string, string> _presetData)
+        {
+            presetData = _presetData;
+        }
+    }
+}
 
 public class CreateObjectFolder : EditorWindow
 {
-    private List<string> _pathList = new();
-    private Dictionary<string, string> _preset = new();
+    private readonly string _presetPath = Application.dataPath + "/CreateObjectFolder/";
+
+    private readonly List<string> _pathList = new();
+    // .. json 프리셋의 형태로 저장
+    private readonly Dictionary<string, string> _preset = new();
+
+    // .. 프리셋 데이터를 저장할 스트링 ..
+    private string _presetName = string.Empty;
 
     private Vector2 _scrollPosition = Vector2.zero;
 
@@ -28,10 +50,19 @@ public class CreateObjectFolder : EditorWindow
         float boxWidth = position.width - 20f;
         float boxHeight = 100f;
 
-        DrawCustomBox(boxHeight);
+        drawCustomBox(boxHeight);
 
         _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, GUILayout.Width(position.width), GUILayout.Height(position.height - 80));
         GUILayout.BeginVertical(_boxStyle, GUILayout.Width(boxWidth), GUILayout.Height(boxHeight));
+
+        _presetName = EditorGUILayout.TextField("", _presetName);
+
+        if (GUILayout.Button("Save Preset"))
+        {
+            // .. 세이브 함수 호출 .. JSON 데이터로 저장
+            savePreset(_preset);
+
+        }
 
         foreach (string folderName in _pathList)
             GUILayout.Label(folderName);
@@ -47,8 +78,27 @@ public class CreateObjectFolder : EditorWindow
         if (GUILayout.Button("CreateFolder"))
             createFolder(_myString);
     }
+    private void savePreset(Dictionary<string, string> presetNames)
+    {
+        // .. 이미 경로상에 존재하는 폴더는 제외..
+        var keyValuePair = presetNames.Where(currentPath => (!File.Exists(_presetPath + currentPath.Value)));
+        PresetData presetData = new(keyValuePair.ToDictionary(pair => pair.Key, pair => pair.Value));
 
-    private void DrawCustomBox(float boxHeight)
+        string jsonData = JsonUtility.ToJson(presetData);
+
+        foreach (var pathValue in presetData.presetData)
+            File.WriteAllText(_presetPath + pathValue.Key, jsonData);
+
+        if (presetData.presetData.Count == 0)
+            Debug.Log("Failed save Preset!");
+        else
+            Debug.Log("Preset Saved!");
+    }
+    private void loadPreset()
+    {
+
+    }
+    private void drawCustomBox(float boxHeight)
     {
         _boxStyle = GUI.skin.box;
 
@@ -57,26 +107,15 @@ public class CreateObjectFolder : EditorWindow
 
         _addOrDeletePathString = EditorGUILayout.TextField("", _addOrDeletePathString, GUILayout.Width(position.width - 180f));
 
-        if (GUI.Button(addPathButton, "AddPath"))
+        if (GUI.Button(addPathButton,       "AddPath"))
             addPath(_addOrDeletePathString);
         if (GUI.Button(deletePathButton, "DeletePath"))
             deletePath(_addOrDeletePathString);
     }
-    private void deletePath(string pathString)
-    {
-        if (CheckStringNullOrWhiteSpace(pathString, "please, Input path!")) return;
 
-        if (_pathList.Contains(pathString))
-        {
-            Debug.Log("delete!");
-            _pathList.Remove(pathString);
-        }
-        else
-            Debug.Log("not found!");
-    }
     private void addPath(string pathString)
     {
-        if (CheckStringNullOrWhiteSpace(pathString, "please, Input path!")) return;
+        if (checkStringNullOrWhiteSpace(pathString, "please, Input path!")) return;
 
         pathString = pathString.Replace(" ", "_");
 
@@ -89,7 +128,7 @@ public class CreateObjectFolder : EditorWindow
         _pathList.Add(pathString);
     }
 
-    private bool CheckStringNullOrWhiteSpace(string str, string log)
+    private bool checkStringNullOrWhiteSpace(string str, string log)
     {
         if (string.IsNullOrWhiteSpace(str))
         {
@@ -101,7 +140,7 @@ public class CreateObjectFolder : EditorWindow
     }
     private void createFolder(string folderString)
     {
-        if (CheckStringNullOrWhiteSpace(folderString, "please, input object's name")) return;
+        if (checkStringNullOrWhiteSpace(folderString, "please, input object's name")) return;
 
         folderString = folderString.Replace(" ", "_");
 
@@ -111,9 +150,26 @@ public class CreateObjectFolder : EditorWindow
         {
             string folderPath = "Assets/" + _myString + "/" + path;
 
+            if (!File.Exists(folderPath))
+                continue;
 
+            File.Create(folderPath);
         }
         
         // File.Create("Assets/" + )
+    }
+    private void deletePath(string pathString)
+    {
+        if (checkStringNullOrWhiteSpace(pathString, "please, Input path!")) return;
+
+        pathString = pathString.Replace(" ", "_");
+
+        if (_pathList.Contains(pathString))
+        {
+            Debug.Log("delete!");
+            _pathList.Remove(pathString);
+        }
+        else
+            Debug.Log("not found!");
     }
 }
