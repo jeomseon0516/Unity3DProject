@@ -4,37 +4,19 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
-using NPresetData;
-
-namespace NPresetData
-{
-    [System.Serializable]
-    public class PresetData
-    {
-        public readonly Dictionary<string, string> presetData;
-
-        public PresetData(Dictionary<string, string> _presetData)
-        {
-            presetData = _presetData;
-        }
-    }
-}
 
 public class CreateObjectFolder : EditorWindow
 {
-    private readonly string _presetPath = Application.dataPath + "/CreateObjectFolder/";
-
-    private readonly List<string> _pathList = new();
-    // .. json 프리셋의 형태로 저장
-    private readonly Dictionary<string, string> _preset = new();
-
-    // .. 프리셋 데이터를 저장할 스트링 ..
-    private string _presetName = string.Empty;
-
+    private const string PRESET_PATH = "/CreateObjectFolder";
+    private const string JSON_FILE_NAME = "/Create_Folder_Preset.json";
+    private Dictionary<string, List<string>> _presetList; // .. json 프리셋의 형태로 저장
+    private List<string> _pathList = new();
     private Vector2 _scrollPosition = Vector2.zero;
-
-    private string _myString = string.Empty;
+    private string[] _presetKeys; // .. 매 프레임 딕셔너리에서 키 값만 받아오는 건 비효율적
     private string _addOrDeletePathString = string.Empty;
+    private string _presetName = string.Empty;  /* .. 프리셋 데이터를 저장할 스트링 .. */
+    private string _rootFolder = string.Empty;
+    private int _selectedValueIndex = 0;
 
     private GUIStyle _boxStyle;
 
@@ -42,80 +24,130 @@ public class CreateObjectFolder : EditorWindow
     private static void init()
     {
         CreateObjectFolder window = (CreateObjectFolder)EditorWindow.GetWindow(typeof(CreateObjectFolder));
+        // .. 프리셋 로드
         window.Show();
     }
 
+    private void OnEnable()
+    {
+        loadPreset(); // .. 프리셋 로드
+    }
+    private void OnDestroy()
+    {
+        // .. 창 종료시 기존에 있던 프리셋들의 세팅을 모두 저장
+        onSavePreset();
+    }
+    private void OnDisable()
+    {
+        onSavePreset();
+    }
     private void OnGUI()
     {
-        float boxWidth = position.width - 20f;
-        float boxHeight = 100f;
+        _presetName = EditorGUILayout.TextField("Preset Name .. ", _presetName);
 
-        drawCustomBox(boxHeight);
+        _selectedValueIndex = EditorGUILayout.Popup(_selectedValueIndex, _presetKeys);
+
+        if (_presetKeys.Length > 0)
+            _pathList = _presetList[_presetKeys[_selectedValueIndex]];
+
+        // .. 세이브 함수 호출 .. JSON 데이터로 저장
+        if (GUILayout.Button("Save Preset"))
+            savePreset(_presetName);
+        if (GUILayout.Button("Remove Preset"))
+            removePreset(_presetKeys.Length > 0 ? _presetKeys[_selectedValueIndex] : "");
 
         _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, GUILayout.Width(position.width), GUILayout.Height(position.height - 80));
-        GUILayout.BeginVertical(_boxStyle, GUILayout.Width(boxWidth), GUILayout.Height(boxHeight));
-
-        _presetName = EditorGUILayout.TextField("", _presetName);
-
-        if (GUILayout.Button("Save Preset"))
-        {
-            // .. 세이브 함수 호출 .. JSON 데이터로 저장
-            savePreset(_preset);
-
-        }
+        GUILayout.BeginVertical();
 
         foreach (string folderName in _pathList)
-            GUILayout.Label(folderName);
+            GUILayout.Label("[" + folderName + "]");
 
-        GUILayout.EndVertical();
+        drawCustomBox();
+
         GUILayout.EndScrollView();
+        GUILayout.EndVertical();
 
-        GUILayout.Space(-5f);
+        GUILayout.Space(-50f);
 
-        GUILayout.Label("Create Object's name", EditorStyles.boldLabel);
-        _myString = EditorGUILayout.TextField("", _myString);
+        GUILayout.Label("create root folder's name", EditorStyles.boldLabel);
+        _rootFolder = EditorGUILayout.TextField("", _rootFolder);
 
         if (GUILayout.Button("CreateFolder"))
-            createFolder(_myString);
+            createFolder(_rootFolder);
     }
-    private void savePreset(Dictionary<string, string> presetNames)
+    private void savePreset(string presetName)
     {
-        // .. 이미 경로상에 존재하는 폴더는 제외..
-        var keyValuePair = presetNames.Where(currentPath => (!File.Exists(_presetPath + currentPath.Value)));
-        PresetData presetData = new(keyValuePair.ToDictionary(pair => pair.Key, pair => pair.Value));
+        if (checkStringNullOrWhiteSpace(presetName, "please, input preset name.") || ProcessingPresetMethod(ref presetName)) return;
 
-        string jsonData = JsonUtility.ToJson(presetData);
+        _presetList.Add(presetName, _pathList);
 
-        foreach (var pathValue in presetData.presetData)
-            File.WriteAllText(_presetPath + pathValue.Key, jsonData);
+        onSavePreset();
+    }
+    private bool ProcessingPresetMethod(ref string presetName)
+    {
+        presetName = presetName.Replace(" ", "_");
 
-        if (presetData.presetData.Count == 0)
-            Debug.Log("Failed save Preset!");
-        else
-            Debug.Log("Preset Saved!");
+        if (_presetList.ContainsKey(presetName))
+        {
+            Debug.Log("this key already included.");
+            return false;
+        }
+
+        if (_pathList.Count == 0)
+        {
+            Debug.Log("noting in the pathList.");
+            return false;
+        }
+
+        return true;
+    }
+    private void removePreset(string presetName)
+    {
+        if (checkStringNullOrWhiteSpace(presetName, "please, input preset name.") || ProcessingPresetMethod(ref presetName)) return;
+
+        _presetList.Remove(presetName);
+        _presetKeys = new List<string>(_presetList.Keys).ToArray();
+
+        _pathList = new();
+    }
+    private void onSavePreset()
+    {
+        string folderPath = Application.dataPath + PRESET_PATH;
+
+        if (!Directory.Exists(folderPath))
+            Directory.CreateDirectory(folderPath);
+
+        string jsonData = DicJsonUtility.ToJson(_presetList);
+
+        using (StreamWriter writer = new StreamWriter(folderPath + JSON_FILE_NAME, false))
+            writer.Write(jsonData);
     }
     private void loadPreset()
     {
+        string path = Application.dataPath + PRESET_PATH;
+        string fileName = path + JSON_FILE_NAME;
 
+        _presetList = Directory.Exists(path) && File.Exists(fileName) ? 
+            DicJsonUtility.FromJson<string, List<string>>(File.ReadAllText(fileName)) : new();
+
+        _presetKeys = new List<string>(_presetList.Keys).ToArray();
     }
-    private void drawCustomBox(float boxHeight)
+    private void drawCustomBox()
     {
         _boxStyle = GUI.skin.box;
 
-        Rect addPathButton = new Rect(position.width - 80f, 2f, 70f, 20f);
-        Rect deletePathButton = new Rect(position.width - 170f, 2f, 85f, 20f);
+        _addOrDeletePathString = EditorGUILayout.TextField("Add/Remove .. ", _addOrDeletePathString);
 
-        _addOrDeletePathString = EditorGUILayout.TextField("", _addOrDeletePathString, GUILayout.Width(position.width - 180f));
+        float width = position.width * 0.5f;
 
-        if (GUI.Button(addPathButton,       "AddPath"))
+        if (GUILayout.Button("Add Path", GUILayout.Width(width)))
             addPath(_addOrDeletePathString);
-        if (GUI.Button(deletePathButton, "DeletePath"))
+        if (GUILayout.Button("Delete Path", GUILayout.Width(width)))
             deletePath(_addOrDeletePathString);
     }
-
     private void addPath(string pathString)
     {
-        if (checkStringNullOrWhiteSpace(pathString, "please, Input path!")) return;
+        if (checkStringNullOrWhiteSpace(pathString, "please, input path!")) return;
 
         pathString = pathString.Replace(" ", "_");
 
@@ -127,7 +159,6 @@ public class CreateObjectFolder : EditorWindow
 
         _pathList.Add(pathString);
     }
-
     private bool checkStringNullOrWhiteSpace(string str, string log)
     {
         if (string.IsNullOrWhiteSpace(str))
@@ -148,15 +179,13 @@ public class CreateObjectFolder : EditorWindow
 
         foreach (string path in _pathList)
         {
-            string folderPath = "Assets/" + _myString + "/" + path;
+            string folderPath = "Assets/" + _rootFolder + "/" + path;
 
             if (!File.Exists(folderPath))
                 continue;
 
-            File.Create(folderPath);
+            Directory.CreateDirectory(folderPath);
         }
-        
-        // File.Create("Assets/" + )
     }
     private void deletePath(string pathString)
     {
