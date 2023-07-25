@@ -45,7 +45,7 @@ public static class DicJsonUtility
         // .. 결과로 반환할 딕셔너리를 생성합니다.
         Dictionary<TKey, TValue> dictionary = new();
 
-        // .. DataDictionary 배열의 요소를 순회하며 딕셔너리에 데이터를 추가합니다.
+        // .. JsonDataArray 배열의 요소를 순회하며 딕셔너리에 데이터를 추가합니다.
         foreach (var customDic in dataDictionaries.dataArray)
             dictionary.Add(customDic.key, customDic.value);
 

@@ -43,6 +43,27 @@ public class CreateObjectFolder : EditorWindow
     }
     private void OnGUI()
     {
+        updatePreset();
+        GUILayout.BeginVertical(GUI.skin.box);
+
+        foreach (string folderName in _pathList)
+            GUILayout.Label("[" + folderName + "]");
+
+        drawCustomBox();
+
+        GUILayout.EndScrollView();
+        GUILayout.EndVertical();
+
+        GUILayout.Space(-70f);
+
+        GUILayout.Label("create root folder's name", EditorStyles.boldLabel);
+        _rootFolder = EditorGUILayout.TextField("", _rootFolder);
+
+        if (GUILayout.Button("CreateFolder"))
+            createFolder(_rootFolder);
+    }
+    private void updatePreset()
+    {
         _presetName = EditorGUILayout.TextField("Preset Name .. ", _presetName);
 
         _selectedValueIndex = EditorGUILayout.Popup(_selectedValueIndex, _presetKeys);
@@ -57,27 +78,10 @@ public class CreateObjectFolder : EditorWindow
             removePreset(_presetKeys.Length > 0 ? _presetKeys[_selectedValueIndex] : "");
 
         _scrollPosition = GUILayout.BeginScrollView(_scrollPosition, GUILayout.Width(position.width), GUILayout.Height(position.height - 80));
-        GUILayout.BeginVertical();
-
-        foreach (string folderName in _pathList)
-            GUILayout.Label("[" + folderName + "]");
-
-        drawCustomBox();
-
-        GUILayout.EndScrollView();
-        GUILayout.EndVertical();
-
-        GUILayout.Space(-50f);
-
-        GUILayout.Label("create root folder's name", EditorStyles.boldLabel);
-        _rootFolder = EditorGUILayout.TextField("", _rootFolder);
-
-        if (GUILayout.Button("CreateFolder"))
-            createFolder(_rootFolder);
     }
     private void savePreset(string presetName)
     {
-        if (checkStringNullOrWhiteSpace(presetName, "please, input preset name.") || ProcessingPresetMethod(ref presetName)) return;
+        if (checkStringNullOrWhiteSpace(presetName, "please, input preset name.") || !ProcessingPresetMethod(ref presetName)) return;
 
         _presetList.Add(presetName, _pathList);
 
@@ -173,15 +177,13 @@ public class CreateObjectFolder : EditorWindow
     {
         if (checkStringNullOrWhiteSpace(folderString, "please, input object's name")) return;
 
-        folderString = folderString.Replace(" ", "_");
-
         Debug.Log("create folder!");
 
         foreach (string path in _pathList)
         {
-            string folderPath = "Assets/" + _rootFolder + "/" + path;
+            string folderPath = Application.dataPath + "/" + _rootFolder + "/" + path.Replace(" ", "_");
 
-            if (!File.Exists(folderPath))
+            if (Directory.Exists(folderPath))
                 continue;
 
             Directory.CreateDirectory(folderPath);

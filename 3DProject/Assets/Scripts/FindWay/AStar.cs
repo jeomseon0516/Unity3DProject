@@ -37,19 +37,16 @@ public class AStar : MonoBehaviour
     private const int DIAGONAL_COST = 14; // .. 평면상의 대각선 코스트
     private const int VERTICAL_DIAGONAL_COST = 18; // .. 3차원 상의 대각선 코스트
     public float Size { get; set; } // .. 복셀의 해상도라고 생각하여야 한다. 사이즈가 작아질 수록 연산량이 기하급수적으로 커지기 때문에 잘 사용하여야 한다.
-
     /* 
      * .. 부동 소수점 문제로 노드 자체의 Vector3를 Key로 가지고 있다면 문제가 생길 수 있기때문에 Vector3Int로 관리
      * Vector3Int는 실 좌표가 아닌 StartNode를 기준으로 어느정도의 위치에 있는지를 판단하는 임의의 값
      */
     // .. 닫힌 목록은 노드의 정보가 필요하지 않기때문에 key값만 가진 해쉬셋으로 구성
     private HashSet<Vector3Int> _closedList = new HashSet<Vector3Int>(); 
-
     /* 
      * .. 열린 목록은 경로 개선할때 노드의 f값 변경이 일어나기 때문에 Key와 Value로 구성된 딕셔너리 사용 
      * 우선순위 큐와 딕셔너리에 있는 노드의 갯수는 항상 같아야 하며 두 자료구조를 한개처럼 생각하여 관리하여야 한다.
      */
-
     private Dictionary<Vector3Int, AStarNode> _openList = new Dictionary<Vector3Int, AStarNode>(); 
     // .. 우선순위 큐로 항상 추정 비용이 가장 적은 노드의 값을 찾아온다.  
     private PriorityQueue<AStarNode> _openPq = new PriorityQueue<AStarNode>();
