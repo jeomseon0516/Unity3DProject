@@ -6,14 +6,14 @@ using UnityEngine;
 public class WorldCollision : MonoBehaviour
 {
     [SerializeField, Range(0.0f, 0.1f)] private float _weight;
-    private float _height;
     int _layerNum;
+    public float Height { get; private set; }
     public bool OnPlaneCollision { get; private set; }
 
     private void Awake()
     {
-        _height = VerticesTo.GetHeightFromVertices(gameObject);
-        _weight = 0.05f;
+        Height = VerticesTo.GetHeightFromVertices(gameObject); // .. 객체의 높이를 구해줌..
+        _weight = 0.02f;
 
         _layerNum = LayerMask.NameToLayer("Plane");
 
@@ -21,9 +21,11 @@ public class WorldCollision : MonoBehaviour
     }
     void Update()
     {
-        float distance = _height * 0.5f;
+        float distance = Height * 0.5f;
         Vector3 pivotPoint = new Vector3(transform.position.x, transform.position.y + distance, transform.position.z);
-        float weightDistance = distance + _weight; 
+        float weightDistance = distance + _weight;
+
+        OnPlaneCollision = false;
 
         Debug.DrawRay(pivotPoint, Vector3.down * weightDistance, Color.blue);
 
@@ -34,7 +36,5 @@ public class WorldCollision : MonoBehaviour
             float yInterval = hit.point.y - transform.position.y;
             transform.position = new Vector3(transform.position.x, transform.position.y + yInterval, transform.position.z);
         }
-        else
-            OnPlaneCollision = false;
     }
 }

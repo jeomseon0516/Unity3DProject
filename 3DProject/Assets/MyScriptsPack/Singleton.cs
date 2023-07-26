@@ -26,7 +26,7 @@ public abstract class Singleton<T> : SingletonBase<Singleton<T>> where T : Singl
 {
     private static T instance = null;
 
-    public static T GetInstance
+    public static T Instance
     {
         get
         {
@@ -60,6 +60,5 @@ public abstract class Singleton<T> : SingletonBase<Singleton<T>> where T : Singl
 
         return true;
     }
-
     protected Singleton() {}
 }

@@ -11,7 +11,6 @@ using UnityEngine;
  * 우선순위 큐의 경우 트리의 구조로 이루어져 있기 때문에 insert 할때 깊이가 깊어질때마다 연산횟수가 1회 늘어나므로 매우 효율적이다.
  * 힙 트리의 구조로 구현한다. 자식 노드의 위치는 항상 확정적이기 때문에 배열로 구현이 가능하다. index 접근 가능
 */
-
 public class PriorityQueue<T> where T : IComparable<T>
 {
     private List<T> _heap = new List<T>();

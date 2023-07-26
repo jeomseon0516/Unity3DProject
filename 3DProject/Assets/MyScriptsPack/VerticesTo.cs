@@ -6,11 +6,14 @@ public static class VerticesTo
 {
     public static float GetHeightFromVertices(GameObject obj)
     {
-        List<Vector3> vertices = GetVertices(obj);
+        List<Vector3> vertices = GetVerticesFromSkinndedMeshRenderer(obj);
+        vertices.AddRange(GetVerticesFromMeshFilter(obj));
 
         if (vertices.Count == 0)
         {
-            Debug.Log(vertices.Count);
+#if UNITY_EDITOR_WIN
+            Debug.Log("vertices not found!");
+#endif
             return 0.0f;
         }
 
@@ -29,15 +32,25 @@ public static class VerticesTo
         
         return maxPivot - minPivot;
     }
-
-    public static List<Vector3> GetVertices(GameObject obj)
+    public static List<Vector3> GetVerticesFromSkinndedMeshRenderer(GameObject obj)
     {
         List<Vector3> vertices = new List<Vector3>();
 
         SkinnedMeshRenderer[] filters = obj.GetComponentsInChildren<SkinnedMeshRenderer>();
 
-        foreach (SkinnedMeshRenderer mf in filters)
-            vertices.AddRange(mf.sharedMesh.vertices);
+        foreach (SkinnedMeshRenderer skinnedMeshRenderer in filters)
+            vertices.AddRange(skinnedMeshRenderer.sharedMesh.vertices);
+
+        return vertices;
+    }
+    public static List<Vector3> GetVerticesFromMeshFilter(GameObject obj)
+    {
+        List<Vector3> vertices = new List<Vector3>();
+
+        MeshFilter[] filters = obj.GetComponentsInChildren<MeshFilter>();
+
+        foreach (MeshFilter meshFilter in filters)
+            vertices.AddRange(meshFilter.mesh.vertices);
 
         return vertices;
     }
