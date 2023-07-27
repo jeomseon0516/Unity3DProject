@@ -45,8 +45,12 @@ public class WorldCollision : MonoBehaviour
             if (IsCorrection)
             {
                 float yInterval = hit.point.y - transform.position.y;
-                transform.position = new Vector3(transform.position.x, transform.position.y + yInterval, transform.position.z);
+                transform.position += new Vector3(0.0f, yInterval, 0.0f);
             }
         }
     }
+    //private bool CheckPlaneCollision(Vector3 nowPosition, Vector3 movePosition)
+    //{
+
+    //}
 }
