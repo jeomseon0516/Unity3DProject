@@ -2,17 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// .. 상태 패턴을 사용하기 때문에 private으로 선언된 필드들을 모두 프로퍼티로 변경 ..
+// .. 상태 패턴을 사용하기 때문에 private으로 선언된 필드들을 모두 프로퍼티로 변경 .. 
 [RequireComponent(typeof(WorldCollision))]
 public partial class CharacterController : DynamicObject
 {
     private const float DEFAULT_SPEED = 6.0f;
-    private StateMachine<CharacterController> StateMachine { get; } = new StateMachine<CharacterController>();
-    private WorldCollision MainWorldCollision { get; set; }
-    private Camera MainCamera { get; set; }
-    private Animator MainAnimator { get; set; }
-    private float RunSpeed { get; set; }
-    private float JumpValue { get; set; }
+    private StateMachine<CharacterController> m_stateMachine;
+    private WorldCollision m_worldCollision;
+    private Camera m_mainCamera;
+    private Animator m_animator;
+    private float m_runSpeed;
+    private float m_jumpValue;
 
 #if UNITY_EDITOR_WIN
     private void FixedUpdate()
@@ -22,28 +22,30 @@ public partial class CharacterController : DynamicObject
 #endif
     protected override void CustomAwake()
     {
-        MainCamera = GameObject.Find("Main Camera").GetComponent<Camera>();
-        MainWorldCollision = GetComponent<WorldCollision>();
-        MainAnimator = GetComponent<Animator>();
+        m_stateMachine = new StateMachine<CharacterController>();
+        m_mainCamera = GameObject.Find("Main Camera").GetComponent<Camera>();
+
+        TryGetComponent(out m_worldCollision);
+        TryGetComponent(out m_animator);
     }
     protected override void Init()
     {
-        StateMachine.RegistState(this, "Fall",    new FallState());
-        StateMachine.RegistState(this, "Default", new DefaultState());
-        StateMachine.ChangeState(this, "Default");
+        m_stateMachine.RegistState(this, "Fall",    new FallState());
+        m_stateMachine.RegistState(this, "Default", new DefaultState());
+        m_stateMachine.ChangeState(this, "Default");
 
-        Speed = DEFAULT_SPEED;
-        RunSpeed = DEFAULT_SPEED * 1.5f;
+        m_speed = DEFAULT_SPEED;
+        m_runSpeed = DEFAULT_SPEED * 1.5f;
     }
     protected override void CustomUpdate()
     {
-        StateMachine.Update(this);
+        m_stateMachine.Update(this);
     }
 }
 public partial class CharacterController : DynamicObject
 {
     // .. 행동을 상태에다 위임 ..
-    public sealed class DefaultState : IState<CharacterController>
+    private sealed class DefaultState : IState<CharacterController>
     {
         public void Awake(CharacterController character)
         {
@@ -55,69 +57,71 @@ public partial class CharacterController : DynamicObject
         {
             character.Direction = new Vector3(Input.GetAxis("Horizontal"), 0.0f, Input.GetAxis("Vertical"));
 
-            character.MainAnimator.SetFloat("moveSpeed", Mathf.Max(Mathf.Abs(character.Direction.x), Mathf.Abs(character.Direction.z)));
+            character.m_animator.SetFloat("moveSpeed", Mathf.Max(Mathf.Abs(character.Direction.x), Mathf.Abs(character.Direction.z)));
 
             if (Mathf.Abs(Input.GetAxisRaw("Horizontal")) > 0 ||
-                Mathf.Abs(Input.GetAxisRaw("Vertical")) > 0)
+                Mathf.Abs(Input.GetAxisRaw("Vertical"))   > 0)
             {
-                if (Input.GetKeyDown(KeyCode.LeftShift) && !ReferenceEquals(character.MainAnimator, null) && character.MainAnimator)
+                if (Input.GetKeyDown(KeyCode.LeftShift) && !ReferenceEquals(character.m_animator, null) && character.m_animator)
                 {
-                    character.MainAnimator.SetBool("isSprint", true);
-                    character.MainAnimator.speed = 1.2f;
+                    character.m_animator.SetBool("isSprint", true);
+                    character.m_animator.speed = 1.2f;
                 }
 
                 character.LookAt = Quaternion.LookRotation(new Vector3(
-                    character.MainCamera.transform.forward.x,
+                    character.m_mainCamera.transform.forward.x,
                     0.0f,
-                    character.MainCamera.transform.forward.z)) *
+                    character.m_mainCamera.transform.forward.z)) *
                     new Vector3(character.Direction.x, 0.0f, character.Direction.z);
             }
 
-            if (Input.GetKeyUp(KeyCode.LeftShift) && !ReferenceEquals(character.MainAnimator, null) && character.MainAnimator)
+            if (Input.GetKeyUp(KeyCode.LeftShift) && !ReferenceEquals(character.m_animator, null) && character.m_animator)
             {
-                character.MainAnimator.SetBool("isSprint", false);
-                character.MainAnimator.speed = 1;
+                character.m_animator.SetBool("isSprint", false);
+                character.m_animator.speed = 1;
             }
 
-            character.Speed = !Input.GetKey(KeyCode.LeftShift) ? CharacterController.DEFAULT_SPEED : character.RunSpeed;
+            character.m_speed = !Input.GetKey(KeyCode.LeftShift) ? CharacterController.DEFAULT_SPEED : character.m_runSpeed;
 
                 // .. 여기서 상태 변경
-            if (!character.MainWorldCollision.OnPlaneCollision)
-                character.StateMachine.ChangeState(character, "Fall");
+            if (!character.m_worldCollision.OnPlaneCollision)
+                character.m_stateMachine.ChangeState(character, "Fall");
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                character.StateMachine.ChangeState(character, "Fall");
-                character.JumpValue = 20.0f;
+                character.m_stateMachine.ChangeState(character, "Fall");
+                character.m_jumpValue = 20.0f;
             }
         }
         public void Exit(CharacterController character)
         {
-            character.MainAnimator.SetFloat("moveSpeed", 0.0f);
-            character.MainAnimator.SetBool("isSprint", false);
-            character.MainAnimator.speed = 1;
+            character.m_animator.SetFloat("moveSpeed", 0.0f);
+            character.m_animator.SetBool("isSprint",   false);
+            character.m_animator.speed = 1;
         }
     }
-    public sealed class FallState : IState<CharacterController>
+    private sealed class FallState : IState<CharacterController>
     {
         public void Awake(CharacterController character)
         {
         }
         public void Enter(CharacterController character)
         {
-            character.transform.position += new Vector3(0.0f, character.JumpValue * Time.deltaTime, 0.0f);
-            character.JumpValue -= Constants.GRAVITY * Time.deltaTime;
+            character.m_worldCollision.IsCorrection = false;
+            character.transform.position += new Vector3(0.0f, character.m_jumpValue * Time.deltaTime, 0.0f);
+            character.m_jumpValue -= Constants.GRAVITY * Time.deltaTime;
         }
         public void Update(CharacterController character)
         {
-            if (character.MainWorldCollision.OnPlaneCollision)
-                character.StateMachine.ChangeState(character, "Default");
+            if (character.m_worldCollision.OnPlaneCollision)
+                character.m_stateMachine.ChangeState(character, "Default");
 
-            character.transform.position += new Vector3(0.0f, character.JumpValue * Time.deltaTime, 0.0f);
-            character.JumpValue -= Constants.GRAVITY * Time.deltaTime;
+            character.transform.position += new Vector3(0.0f, character.m_jumpValue * Time.deltaTime, 0.0f);
+            character.m_jumpValue -= Constants.GRAVITY * Time.deltaTime;
         }
         public void Exit(CharacterController character)
         {
-            character.JumpValue = 0.0f;
+            character.m_worldCollision.IsCorrection = true;
+            character.m_jumpValue = 0.0f;
         }
     }
 }

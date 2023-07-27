@@ -13,16 +13,15 @@ public interface IState<T> where T : DynamicObject
     public void Update(T t);
     public void Exit(T t);
 }
-// .. Context객체에서 직접 IState의 함수들을 호출 할 권한을 주지 않습니다.
 public class StateMachine<T> where T : DynamicObject
 {
-    private Dictionary<string, IState<T>> _stateList = new(); // .. 상태들을 저장 상태들을 매번 new로 생성하면 가비지가 생성되고 비용이 크기 때문
+    private Dictionary<string, IState<T>> _stateList = new(); // .. 상태들을 저장. 상태들을 매번 new로 생성하면 가비지가 생성되고 비용이 크기 때문
     private IState<T> _state; // .. 현재 상태
     public void Update(T t)
     {
         _state.Update(t);
     }
-    public void RegistState(T t, string key, IState<T> state)
+    public void RegistState(T t, string key, IState<T> state) // .. 상태를 저장
     {
         if (_stateList.ContainsKey(key)) return;
 
@@ -30,7 +29,7 @@ public class StateMachine<T> where T : DynamicObject
         _stateList.Add(key, state);
         _state = state;
     }
-    public void ChangeState(T t, string key)
+    public void ChangeState(T t, string key) // .. 딕셔너리에서 저장 된 상태를 가져옴 
     {
         if (!_stateList.TryGetValue(key, out IState<T> state) || _state == state) return;
 
