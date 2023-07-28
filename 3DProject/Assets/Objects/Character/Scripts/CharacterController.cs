@@ -3,21 +3,19 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // .. 상태 패턴을 사용하기 때문에 private으로 선언된 필드들을 모두 프로퍼티로 변경 .. 
-[RequireComponent(typeof(WorldCollision))]
 public partial class CharacterController : DynamicObject
 {
     private const float DEFAULT_SPEED = 6.0f;
     private StateMachine<CharacterController> m_stateMachine;
-    private WorldCollision m_worldCollision;
     private Camera m_mainCamera;
     private Animator m_animator;
     private float m_runSpeed;
     private float m_jumpValue;
 
 #if UNITY_EDITOR_WIN
-    private void FixedUpdate()
+    protected override void CustomFixedUpdate()
     {
-        Debug.DrawRay(transform.position, transform.forward * 5.0f, Color.red);
+        Debug.DrawRay(m_rigidbody.position, transform.forward * 5.0f, Color.red);
     }
 #endif
     protected override void CustomAwake()
@@ -25,7 +23,6 @@ public partial class CharacterController : DynamicObject
         m_stateMachine = new StateMachine<CharacterController>();
         m_mainCamera = GameObject.Find("Main Camera").GetComponent<Camera>();
 
-        TryGetComponent(out m_worldCollision);
         TryGetComponent(out m_animator);
     }
     protected override void Init()
@@ -34,7 +31,7 @@ public partial class CharacterController : DynamicObject
         m_stateMachine.RegistState(this, "Default", new DefaultState());
         m_stateMachine.ChangeState(this, "Default");
 
-        m_speed = DEFAULT_SPEED;
+        m_speed    = DEFAULT_SPEED;
         m_runSpeed = DEFAULT_SPEED * 1.5f;
     }
     protected override void CustomUpdate()
@@ -84,12 +81,12 @@ public partial class CharacterController : DynamicObject
             character.m_speed = !Input.GetKey(KeyCode.LeftShift) ? CharacterController.DEFAULT_SPEED : character.m_runSpeed;
 
                 // .. 여기서 상태 변경
-            if (!character.m_worldCollision.OnPlaneCollision)
+            if (character.m_worldCollision.IsFall)
                 character.m_stateMachine.ChangeState(character, "Fall");
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 character.m_stateMachine.ChangeState(character, "Fall");
-                character.m_jumpValue = 20.0f;
+                character.m_worldCollision.Gravity = 20.0f;
             }
         }
         public void Exit(CharacterController character)
@@ -105,23 +102,15 @@ public partial class CharacterController : DynamicObject
         {
         }
         public void Enter(CharacterController character)
-        {
-            character.m_worldCollision.IsCorrection = false;
-            character.transform.position += new Vector3(0.0f, character.m_jumpValue * Time.deltaTime, 0.0f);
-            character.m_jumpValue -= Constants.GRAVITY * Time.deltaTime;
+        { 
         }
         public void Update(CharacterController character)
         {
-            if (character.m_worldCollision.OnPlaneCollision)
+            if (!character.m_worldCollision.IsFall)
                 character.m_stateMachine.ChangeState(character, "Default");
-
-            character.transform.position += new Vector3(0.0f, character.m_jumpValue * Time.deltaTime, 0.0f);
-            character.m_jumpValue -= Constants.GRAVITY * Time.deltaTime;
         }
         public void Exit(CharacterController character)
         {
-            character.m_worldCollision.IsCorrection = true;
-            character.m_jumpValue = 0.0f;
         }
     }
 }

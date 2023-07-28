@@ -35,14 +35,16 @@ public partial class CameraController : MonoBehaviour
         _offset = new Vector3(0.0f, 1.0f, 0.0f);
         _distance = 5.0f;
     }
+    private void FixedUpdate()
+    {
+        focusingCamera();
+    }
     private void Update()
     {
         controlMouseWheel();
         controlMouseDrag();
-        focusingCamera();
         checkBlockObject();
     }
-
     private void focusingCamera()
     {
         if (ReferenceEquals(TargetObject, null) || !TargetObject) return;
