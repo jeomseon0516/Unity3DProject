@@ -6,6 +6,7 @@ using UnityEngine;
 public abstract class DynamicObject : MonoBehaviour
 {
     [SerializeField, Range(0.0f, 8.0f)] protected float m_speed;
+
     protected WorldCollision m_worldCollision;
     protected Rigidbody m_rigidbody;
     public Vector3 Direction { get; protected set; } 

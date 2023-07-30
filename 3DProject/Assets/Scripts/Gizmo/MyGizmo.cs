@@ -5,6 +5,8 @@ using UnityEngine;
 public class MyGizmo : MonoBehaviour
 {
     public Color GizmoColor { get; set; }
+    public float Radius { get; set; }
+    public Vector3 Pivot { get; set; }
 
     private void Awake()
     {
@@ -13,6 +15,6 @@ public class MyGizmo : MonoBehaviour
     private void OnDrawGizmos()
     {
         Gizmos.color = GizmoColor;
-        Gizmos.DrawSphere(transform.position, 0.2f);
+        Gizmos.DrawSphere(transform.position, Radius);
     }
 }

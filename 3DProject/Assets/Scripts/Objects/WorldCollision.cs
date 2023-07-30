@@ -12,11 +12,13 @@ using UnityEngine;
  * GameObject가 Component List를 가지고 각 컴포넌트들의 동작을 수행하게끔 설계되어 있는 것이다. 
  */
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(MyGizmo))]
 public class WorldCollision : MonoBehaviour
 {
     public class Components
     {
-        [HideInInspector] public Rigidbody rigidBody;
+        [HideInInspector] public Rigidbody rigidbody;
+        [HideInInspector] public MyGizmo sphereGizmo;
     }
     [Serializable]
     public class CollisionOption
@@ -34,70 +36,72 @@ public class WorldCollision : MonoBehaviour
     private CollisionState _collisionState = new CollisionState();
     private Components _components = new Components();
 
-    private Components Com => _components;
-    private CollisionOption COption => _collisionOption;
-    private CollisionState CState => _collisionState;
+    public Components Com => _components;
+    public CollisionOption COption => _collisionOption;
+    public CollisionState CState => _collisionState;
 
     private int _layerNum;
     private float _castRadius;
     private float _fixedDeltaTime;
     public float Height { get; private set; }
-    public float Gravity { get => COption.gravity; }
-    public bool IsFall { get => CState.isFall; }
-
+    public float Gravity { get => COption.gravity; set => COption.gravity = value; } 
+    public bool IsFall => CState.isFall;
 
     private void Awake()
     {
         _fixedDeltaTime = Time.fixedDeltaTime;
 
-        Com.rigidBody = GetComponent<Rigidbody>();
+        initRigidbody();
+
         Height = VerticesTo.GetHeightFromVertices(gameObject); // .. 객체의 높이를 구해줌..
         COption.gravity = 0.0f;
         CState.isFall = false;
 
         _layerNum = LayerMask.NameToLayer("Plane");
-        Com.rigidBody.useGravity = false;
-        _weight = 0.05f;
-    }
-    private void Start()
-    {
+        Com.rigidbody.useGravity = false;
     }
     void FixedUpdate()
     {
         float distance = Height * 0.5f;
-        Vector3 pivotPoint = new Vector3(_rigidbody.position.x, _rigidbody.position.y + distance, _rigidbody.position.z);
-        float weightDistance = distance + _weight;
+        Vector3 pivotPoint = new Vector3(Com.rigidbody.position.x, Com.rigidbody.position.y + distance, Com.rigidbody.position.z);
 
-        checkGround(pivotPoint, weightDistance);
+        checkGround(pivotPoint, distance);
         fallObject();
+    }
+    private void initGizmos()
+    {
+        if (!TryGetComponent(out Com.sphereGizmo)) return;
+
+        Com.sphereGizmo.Radius = _castRadius;
+        Com.sphereGizmo.Pivot = Vector3.zero;
     }
     private void initRigidbody()
     {
-        if (TryGetComponent(out Com.rigidBody))
-        {
-            Com.rigidBody.useGravity = false;
-            Com.rigidBody.freezeRotation = true;
-        }
+        if (!TryGetComponent(out Com.rigidbody)) return;
+
+        Com.rigidbody.useGravity = false;
+        Com.rigidbody.freezeRotation = true;
     }
     private void checkGround(Vector3 pivotPoint, float distance)
     {
-        bool cast = Physics.SphereCast(pivotPoint, Vector3.down, out RaycastHit hit, distance, 1 << _layerNum);
+        bool cast = Physics.SphereCast(pivotPoint, _castRadius, Vector3.down, out RaycastHit hit, 1 << _layerNum);
         CState.isFall = true;
 
         if (cast) // .. Ray를 발사, 캐릭터가 바닥을 뚫었을때 보정
         {
-            IsFall = false;
+            CState.isFall = false;
 
             float yInterval = hit.point.y - transform.position.y;
-            _rigidbody.MovePosition(_rigidbody.position + new Vector3(0.0f, yInterval, 0.0f));
-        }
 
+            if (yInterval > 0)
+                Com.rigidbody.MovePosition(Com.rigidbody.position + new Vector3(0.0f, yInterval, 0.0f));
+        }
     }
     private void fallObject()
     {
         if (!IsFall)
-            Gravity = 0.0f;
+            COption.gravity = 0.0f;
         else
-            Gravity -= Constants.GRAVITY * Time.deltaTime;
+            COption.gravity -= Constants.GRAVITY * Time.deltaTime;
     }
 }
