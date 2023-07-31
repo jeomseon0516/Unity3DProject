@@ -38,17 +38,17 @@ public class WorldCollision : MonoBehaviour
         public bool isForwardBlocked;
     }
 
-    private CollisionOption _collisionOption = new CollisionOption();
-    private CollisionState _collisionState = new CollisionState();
-    private Components _components = new Components();
+    private CollisionOption m_collisionOption = new CollisionOption();
+    private CollisionState m_collisionState = new CollisionState();
+    private Components m_components = new Components();
 
-    public Components Com => _components;
-    public CollisionOption COption => _collisionOption;
-    public CollisionState CState => _collisionState;
+    public Components Com => m_components;
+    public CollisionOption COption => m_collisionOption;
+    public CollisionState CState => m_collisionState;
 
-    private float _castRadius;
-    private float _fixedDeltaTime;
-    private int _layerNum;
+    private float m_castRadius;
+    private float m_fixedDeltaTime;
+    private int m_layerNum;
     public float Gravity 
     { 
         get => COption.gravity; 
@@ -60,7 +60,7 @@ public class WorldCollision : MonoBehaviour
 
     private void Awake()
     {
-        _fixedDeltaTime = Time.fixedDeltaTime;
+        m_fixedDeltaTime = Time.fixedDeltaTime;
 
         initRigidbody();
 #if UNITY_EDITOR_WIN
@@ -70,10 +70,10 @@ public class WorldCollision : MonoBehaviour
         COption.gravity = 0.0f;
         CState.isFall = false;
 
-        _layerNum = LayerMask.NameToLayer("Plane");
+        m_layerNum = LayerMask.NameToLayer("Plane");
         Com.rigidbody.useGravity = false;
     }
-    void FixedUpdate()
+    private void FixedUpdate()
     {
         float distance = Height * 0.5f;
         Vector3 pivotPoint = new Vector3(Com.rigidbody.position.x, Com.rigidbody.position.y + distance, Com.rigidbody.position.z);
@@ -86,7 +86,7 @@ public class WorldCollision : MonoBehaviour
     {
         if (!TryGetComponent(out Com.sphereGizmo)) return;
 
-        Com.sphereGizmo.Radius = _castRadius;
+        Com.sphereGizmo.Radius = m_castRadius;
         Com.sphereGizmo.Pivot = Vector3.zero;
     }
     private void initRigidbody()
@@ -98,7 +98,7 @@ public class WorldCollision : MonoBehaviour
     }
     private void checkGround(Vector3 pivotPoint, float distance)
     {
-        bool cast = Physics.SphereCast(pivotPoint, _castRadius, Vector3.down, out RaycastHit hit, 1 << _layerNum);
+        bool cast = Physics.SphereCast(pivotPoint, m_castRadius, Vector3.down, out RaycastHit hit, 1 << m_layerNum);
         CState.isFall = true;
 
         if (cast) // .. Ray를 발사, 캐릭터가 바닥을 뚫었을때 보정

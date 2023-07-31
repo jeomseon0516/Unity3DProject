@@ -1,8 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
- 
-// .. 필드를 중첩 클래스로 묶어버리면 상속관계에서 문제가 생긴다.. 사용 불가능한 디자인
+
 [RequireComponent(typeof(DynamicObject))]
 public partial class CharacterController : MonoBehaviour, IDynamicObject
 {
@@ -24,13 +23,16 @@ public partial class CharacterController : MonoBehaviour, IDynamicObject
 
     private void Awake()
     {
+        initComponent();
+    }
+    private void Start()
+    {
         m_stateMachine = new StateMachine<CharacterController>();
 
         m_stateMachine.RegistState(this, "Fall",    new FallState());
         m_stateMachine.RegistState(this, "Default", new DefaultState());
         m_stateMachine.ChangeState(this, "Default");
 
-        initComponent();
         m_runSpeed = DEFAULT_SPEED * 1.5f;
     }
     private void Update()
