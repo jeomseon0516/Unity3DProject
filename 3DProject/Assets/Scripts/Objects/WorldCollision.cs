@@ -15,6 +15,12 @@ using UnityEngine;
 [RequireComponent(typeof(MyGizmo))]
 public class WorldCollision : MonoBehaviour
 {
+    #region MField
+    /*
+     * -----------------------------------------------------------------------------------------
+     *                               MemberField
+     * -----------------------------------------------------------------------------------------
+     */
     public class Components
     {
         [HideInInspector] public Rigidbody rigidbody;
@@ -40,19 +46,26 @@ public class WorldCollision : MonoBehaviour
     public CollisionOption COption => _collisionOption;
     public CollisionState CState => _collisionState;
 
-    private int _layerNum;
     private float _castRadius;
     private float _fixedDeltaTime;
-    public float Height { get; private set; }
-    public float Gravity { get => COption.gravity; set => COption.gravity = value; } 
+    private int _layerNum;
+    public float Gravity 
+    { 
+        get => COption.gravity; 
+        set => COption.gravity = value; 
+    } 
     public bool IsFall => CState.isFall;
+    public float Height { get; private set; }
+    #endregion
 
     private void Awake()
     {
         _fixedDeltaTime = Time.fixedDeltaTime;
 
         initRigidbody();
-
+#if UNITY_EDITOR_WIN
+        initGizmos();
+#endif
         Height = VerticesTo.GetHeightFromVertices(gameObject); // .. 객체의 높이를 구해줌..
         COption.gravity = 0.0f;
         CState.isFall = false;
@@ -66,6 +79,7 @@ public class WorldCollision : MonoBehaviour
         Vector3 pivotPoint = new Vector3(Com.rigidbody.position.x, Com.rigidbody.position.y + distance, Com.rigidbody.position.z);
 
         checkGround(pivotPoint, distance);
+
         fallObject();
     }
     private void initGizmos()

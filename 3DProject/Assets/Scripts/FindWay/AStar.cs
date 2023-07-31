@@ -5,12 +5,12 @@ using UnityEngine;
 
 public class AStarNode : IComparable<AStarNode>
 {
-    public AStarNode Parent { get; set; }
-    public Vector3Int NodePoint { get; set; } // .. 노드의 포인트 Key값으로 쓰인다.
-    public Vector3 NodePosition { get; set; }
-    public int Cost { get => G + Heuristics; } // .. F
-    public int G { get; set; } // .. G
-    public int Heuristics { get; set; } // .. H
+    public AStarNode Parent { get; internal set; }
+    public Vector3Int NodePoint { get; internal set; } // .. 노드의 포인트 Key값으로 쓰인다.
+    public Vector3 NodePosition { get; internal set; }
+    public int Cost { get; internal set; } // .. F
+    public int G { get; internal set; } // .. G
+    public int Heuristics { get; internal set; } // .. H
     public AStarNode(AStarNode parent, Vector3Int nodePoint, Vector3 nodePosition, int g, int heuristics)
     {
         Parent = parent;
@@ -37,25 +37,27 @@ public class AStar : MonoBehaviour
     private const int DIAGONAL_COST = 14; // .. 평면상의 대각선 코스트
     private const int VERTICAL_DIAGONAL_COST = 18; // .. 3차원 상의 대각선 코스트
     public float Size { get; set; } // .. 복셀의 해상도라고 생각하여야 한다. 사이즈가 작아질 수록 연산량이 기하급수적으로 커지기 때문에 잘 사용하여야 한다.
+
     /* 
      * .. 부동 소수점 문제로 노드 자체의 Vector3를 Key로 가지고 있다면 문제가 생길 수 있기때문에 Vector3Int로 관리
      * Vector3Int는 실 좌표가 아닌 StartNode를 기준으로 어느정도의 위치에 있는지를 판단하는 임의의 값
+     * 
+     * 닫힌 목록은 노드의 정보가 필요하지 않기때문에 key값만 가진 해쉬셋으로 구성
      */
-    // .. 닫힌 목록은 노드의 정보가 필요하지 않기때문에 key값만 가진 해쉬셋으로 구성
-    private HashSet<Vector3Int> _closedList = new HashSet<Vector3Int>(); 
+    private HashSet<Vector3Int> m_closedList = new HashSet<Vector3Int>(); 
     /* 
      * .. 열린 목록은 경로 개선할때 노드의 f값 변경이 일어나기 때문에 Key와 Value로 구성된 딕셔너리 사용 
      * 우선순위 큐와 딕셔너리에 있는 노드의 갯수는 항상 같아야 하며 두 자료구조를 한개처럼 생각하여 관리하여야 한다.
      */
-    private Dictionary<Vector3Int, AStarNode> _openList = new Dictionary<Vector3Int, AStarNode>(); 
+    private Dictionary<Vector3Int, AStarNode> m_openList = new Dictionary<Vector3Int, AStarNode>(); 
     // .. 우선순위 큐로 항상 추정 비용이 가장 적은 노드의 값을 찾아온다.  
-    private PriorityQueue<AStarNode> _openPq = new PriorityQueue<AStarNode>();
+    private PriorityQueue<AStarNode> m_openPq = new PriorityQueue<AStarNode>();
     // .. 찾아낸 노드를 순차적으로 가져와 이동할 것이므로 스택을 사용
-    private Stack<AStarNode> _findList = new Stack<AStarNode>(); 
+    private Stack<AStarNode> m_findList = new Stack<AStarNode>(); 
     // .. 탐색을 시작할 노드
-    private AStarNode _startNode;
+    private AStarNode m_startNode;
     // .. 탐색을 끝낼때 사용할 노드
-    private AStarNode _endNode;
+    private AStarNode m_endNode;
     // .. 타겟이 될 오브젝트 또는 타겟이 될 (Vector3) 좌표를 가지고 있는다.
     [field:SerializeField] public GameObject TargetObject { get; set; } 
     public bool IsMove { get; private set; }
@@ -69,39 +71,39 @@ public class AStar : MonoBehaviour
     private void FixedUpdate()
     {
         if (TryGetComponent(out AStarNodeDebug debug))
-            debug.DrawBox(_findList.ToArray());
+            debug.DrawBox(m_findList.ToArray());
     }
 #endif
     private void findWay(Vector3 targetPosition)
     {
-        _startNode = new AStarNode(null, new Vector3Int(0, 0, 0), transform.position, 0, 0);
+        m_startNode = new AStarNode(null, new Vector3Int(0, 0, 0), transform.position, 0, 0);
 
-        Vector3 interval = _startNode.NodePosition - targetPosition;
+        Vector3 interval = m_startNode.NodePosition - targetPosition;
         Vector3Int nodeInterval = convertIntervalToNodePointInterval(interval);
 
         Vector3Int endNodePoint = new Vector3Int(interval.x > 0 ? -nodeInterval.x : nodeInterval.x, 0,
                                                  interval.z > 0 ? -nodeInterval.z : nodeInterval.z);
 
-        _startNode.Heuristics = (nodeInterval.x + nodeInterval.z) * COST;
-        _endNode = new AStarNode(null, endNodePoint, _startNode.NodePosition + new Vector3(endNodePoint.x, 0.0f, endNodePoint.z) * Size, 0, 0);
+        m_startNode.Heuristics = (nodeInterval.x + nodeInterval.z) * COST;
+        m_endNode = new AStarNode(null, endNodePoint, m_startNode.NodePosition + new Vector3(endNodePoint.x, 0.0f, endNodePoint.z) * Size, 0, 0);
 
-        pushOpenList(_startNode);
+        pushOpenList(m_startNode);
 
         AStarNode pivotNode = popOpenList();
 
-        while (Vector3.Distance(pivotNode.NodePosition, _endNode.NodePosition) >= Size * 0.5f)
+        while (Vector3.Distance(pivotNode.NodePosition, m_endNode.NodePosition) >= Size * 0.5f)
         {
             if (!Physics.Raycast(pivotNode.NodePosition,
-                (_endNode.NodePosition - pivotNode.NodePosition).normalized,
-                Vector3.Distance(pivotNode.NodePosition, _endNode.NodePosition),
+                (m_endNode.NodePosition - pivotNode.NodePosition).normalized,
+                Vector3.Distance(pivotNode.NodePosition, m_endNode.NodePosition),
                 1 << LayerMask.NameToLayer("Wall"))) // .. 엔드노드까지 레이캐스트 장애물이 존재하지 않을 경우 해당 노드까지가 베스트 경로 이므로 길찾기 종료 
             {
-                _endNode.Parent = pivotNode;
-                pivotNode = _endNode;
+                m_endNode.Parent = pivotNode;
+                pivotNode = m_endNode;
                 break;
             }
 
-            _closedList.Add(pivotNode.NodePoint);
+            m_closedList.Add(pivotNode.NodePoint);
 
             int cost = pivotNode.G + COST;
             int diagonalCost = pivotNode.G + DIAGONAL_COST;
@@ -119,7 +121,7 @@ public class AStar : MonoBehaviour
         }
 
         AStarNode temp = pivotNode;
-        _findList.Push(pivotNode);
+        m_findList.Push(pivotNode);
 
         while (!ReferenceEquals(pivotNode.Parent, null))
         {
@@ -135,7 +137,7 @@ public class AStar : MonoBehaviour
                 1 << LayerMask.NameToLayer("Wall"))) 
             {
                 temp = pivotNode;
-                _findList.Push(pivotNode);
+                m_findList.Push(pivotNode);
             }
 
             pivotNode = pivotNode.Parent;
@@ -148,10 +150,10 @@ public class AStar : MonoBehaviour
         Vector3 position = pivotNode.NodePosition + (Vector3)nodePoint * Size; // .. 새로 생성한 노드의 포지션이 될 값
         Vector3Int newNodePoint = pivotNode.NodePoint + nodePoint;
 
-        if (_closedList.Contains(newNodePoint) || Physics.CheckSphere(position, Size, 1 << LayerMask.NameToLayer("Wall")))
+        if (m_closedList.Contains(newNodePoint) || Physics.CheckSphere(position, Size, 1 << LayerMask.NameToLayer("Wall")))
             return;
 
-        if (_openList.TryGetValue(newNodePoint, out AStarNode node))
+        if (m_openList.TryGetValue(newNodePoint, out AStarNode node))
         {
             if (cost < node.G) // .. 경로 개선
             {
@@ -160,17 +162,17 @@ public class AStar : MonoBehaviour
             }
         }
         else
-            pushOpenList(new AStarNode(pivotNode, newNodePoint, position, cost, getManhattanDistance(_endNode.NodePosition - position) * COST));
+            pushOpenList(new AStarNode(pivotNode, newNodePoint, position, cost, getManhattanDistance(m_endNode.NodePosition - position) * COST));
     }
     private void pushOpenList(AStarNode node)
     {
-        _openPq.Push(node);
-        _openList.Add(node.NodePoint, node);
+        m_openPq.Push(node);
+        m_openList.Add(node.NodePoint, node);
     }
     private AStarNode popOpenList()
     {
-        AStarNode node = _openPq.Pop();
-        _openList.Remove(node.NodePoint);
+        AStarNode node = m_openPq.Pop();
+        m_openList.Remove(node.NodePoint);
 
         return node;
     }
@@ -188,25 +190,25 @@ public class AStar : MonoBehaviour
     }
     public void FindPath()
     {
-        _findList.Clear();
+        m_findList.Clear();
 
         findWay(TargetObject.transform.position);
 
-        _openPq.Clear();
-        _openList.Clear();
-        _closedList.Clear();
+        m_openPq.Clear();
+        m_openList.Clear();
+        m_closedList.Clear();
 
 #if UNITY_EDITOR_WIN
         if (TryGetComponent(out AStarNodeDebug debug))
-            debug.UpdateGizmo(_findList.ToArray(), _startNode, _endNode, Size);
+            debug.UpdateGizmo(m_findList.ToArray(), m_startNode, m_endNode, Size);
 #endif
     }
     public bool ContainWays()
     {
-        return _findList.Count > 0;
+        return m_findList.Count > 0;
     }
     public Vector3 GetMoveNext()
     {
-        return _findList.Pop().NodePosition;
+        return m_findList.Pop().NodePosition;
     }
 }
