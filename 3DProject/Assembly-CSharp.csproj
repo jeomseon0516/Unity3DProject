@@ -77,7 +77,6 @@
     <Compile Include="Assets\MyScriptsPack\Constants.cs" />
     <Compile Include="Assets\Visual Design Cafe\Nature Renderer Demo\Scripts\RenderPipelineLighting.cs" />
     <Compile Include="Assets\Scripts\FindWay\AStar.cs" />
-    <Compile Include="Assets\Scripts\Objects\WorldCollision.cs" />
     <Compile Include="Assets\Scripts\Objects\DynamicObject.cs" />
     <Compile Include="Assets\WayPoint\Editors\WayPoint.cs" />
     <Compile Include="Assets\Objects\Character\Scripts\CharacterController.cs" />

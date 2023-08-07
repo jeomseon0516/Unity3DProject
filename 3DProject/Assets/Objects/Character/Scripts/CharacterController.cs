@@ -60,22 +60,21 @@ public partial class CharacterController : MonoBehaviour, IDynamicObject
         m_components.dynamicObject.Speed = DEFAULT_SPEED;
     }
 }
+
 public partial class CharacterController : MonoBehaviour, IDynamicObject
 {
     // .. 행동을 상태에다 위임 ..
     private sealed class DefaultState : IState<CharacterController>
     {
         DynamicObject m_dynamicObject;
-        WorldCollision m_worldCollision;
         Animator m_animator;
         Camera m_mainCamera;
 
         public void Awake(CharacterController character)
         {
+            m_animator      = character.m_components.animator;
+            m_mainCamera    = character.m_components.mainCamera;
             m_dynamicObject = character.m_components.dynamicObject;
-            m_worldCollision = m_dynamicObject.Com.worldCollision;
-            m_animator = character.m_components.animator;
-            m_mainCamera = character.m_components.mainCamera;
         }
         public void Enter(CharacterController character)
         {
@@ -108,15 +107,21 @@ public partial class CharacterController : MonoBehaviour, IDynamicObject
                 m_animator.speed = 1;
             }
 
-            m_dynamicObject.Speed = !Input.GetKey(KeyCode.LeftShift) ? CharacterController.DEFAULT_SPEED : character.m_runSpeed;
+            m_dynamicObject.Speed = 
+                Input.GetKey(KeyCode.LeftShift) ? 
+                character.m_runSpeed : 
+                CharacterController.DEFAULT_SPEED;
 
-                // .. 여기서 상태 변경
-            if (m_worldCollision.IsFall)
+            // .. 여기서 상태 변경
+            if (!m_dynamicObject.IsGrounded)
                 character.m_stateMachine.ChangeState(character, "Fall");
-            if (Input.GetKeyDown(KeyCode.Space))
+            else
             {
-                character.m_stateMachine.ChangeState(character, "Fall");
-                m_worldCollision.Gravity = 20.0f;
+                if (Input.GetKeyDown(KeyCode.Space))
+                {
+                    character.m_stateMachine.ChangeState(character, "Fall");
+                    m_dynamicObject.Gravity = 20.0f;
+                }
             }
         }
         public void Exit(CharacterController character)
@@ -128,18 +133,23 @@ public partial class CharacterController : MonoBehaviour, IDynamicObject
     }
     private sealed class FallState : IState<CharacterController>
     {
-        WorldCollision m_worldCollision;
+        DynamicObject m_dynamicObject;
         public void Awake(CharacterController character)
         {
-            m_worldCollision = character.m_components.dynamicObject.Com.worldCollision;
+            m_dynamicObject = character.m_components.dynamicObject;
         }
         public void Enter(CharacterController character)
         { 
         }
         public void Update(CharacterController character)
         {
-            if (!m_worldCollision.IsFall)
+            if (m_dynamicObject.GroundInterval <= 0)
+            {
                 character.m_stateMachine.ChangeState(character, "Default");
+                character.m_components.rBody.MovePosition(
+                    character.m_components.rBody.position - 
+                    new Vector3(0.0f, m_dynamicObject.GroundInterval, 0.0f));
+            }
         }
         public void Exit(CharacterController character)
         {

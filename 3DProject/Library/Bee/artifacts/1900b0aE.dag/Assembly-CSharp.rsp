@@ -386,7 +386,6 @@
 "Assets/Scripts/Matrix.cs"
 "Assets/Scripts/MyClass.cs"
 "Assets/Scripts/Objects/DynamicObject.cs"
-"Assets/Scripts/Objects/WorldCollision.cs"
 "Assets/Scripts/Rotation.cs"
 "Assets/Scripts/Target.cs"
 "Assets/Visual Design Cafe/Nature Renderer Demo/Scripts/CompileShaders.cs"
