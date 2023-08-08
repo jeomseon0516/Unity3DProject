@@ -7,22 +7,22 @@ public partial class CharacterController : MonoBehaviour, IDynamicObject
 {
     public class Components
     {
-        public DynamicObject dynamicObject;
+        public DynamicObject dynamicObject; // .. 상속 관계에 있던 다이나믹 오브젝트를 컴포넌트로 구조 변경
         public Camera mainCamera;
         public Animator animator;
         public Rigidbody rBody;
     }
-
+    private const float DEFAULT_SPEED = 6.0f;
     private Components m_components = new Components();
     public Components Com => m_components;
 
     private StateMachine<CharacterController> m_stateMachine;
-    private const float DEFAULT_SPEED = 6.0f;
     private float m_runSpeed;
     private float m_jumpValue;
 
     private void Awake()
     {
+        initDynamicObject();
         initComponent();
     }
     private void Start()
@@ -47,8 +47,6 @@ public partial class CharacterController : MonoBehaviour, IDynamicObject
 #endif
     private void initComponent()
     {
-        initDynamicObject();
-
         GameObject.Find("Main Camera").TryGetComponent(out m_components.mainCamera);
         TryGetComponent(out m_components.animator);
         TryGetComponent(out m_components.rBody);

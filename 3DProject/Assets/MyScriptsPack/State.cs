@@ -15,7 +15,7 @@ public interface IState<T> where T : IDynamicObject
 }
 public class StateMachine<T> where T : IDynamicObject
 {
-    private Dictionary<string, IState<T>> _stateList = new(); // .. 상태들을 저장. 상태들을 매번 new로 생성하면 가비지가 생성되고 비용이 크기 때문
+    private Dictionary<string, IState<T>> _stateList = new Dictionary<string, IState<T>>(); // .. 상태들을 저장. 상태들을 매번 new로 생성하면 가비지가 생성되고 비용이 크기 때문
     private IState<T> _state; // .. 현재 상태
     public void Update(T t)
     {

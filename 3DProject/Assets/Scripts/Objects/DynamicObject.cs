@@ -30,6 +30,7 @@ public class DynamicObject : MonoBehaviour
     {
         [HideInInspector] public Rigidbody rBody;
         [HideInInspector] public MyGizmo sphereGizmo;
+        [HideInInspector] public MyGizmo groundCollisionGizmo;
     }
     public class MoveOption
     {
@@ -43,6 +44,7 @@ public class DynamicObject : MonoBehaviour
         public bool isForwardBlocked;
     }
 
+    private float m_sphereMaxDistance; // .. 
     private float m_castRadius;
     private float m_fixedDeltaTime;
     private int m_layerNum;
@@ -50,11 +52,11 @@ public class DynamicObject : MonoBehaviour
     private Components m_components = new Components();
     private MoveOption m_moveOption = new MoveOption();
     private CollisionState m_collisionState = new CollisionState();
-    [field:SerializeField, Range(0.0f, Constants.GRAVITY)] public float Gravity { get; set; }
-    [field:SerializeField, Range(0.0f, 8.0f)] public float Speed { get; set; }
     public Components Com => m_components;
     public CollisionState CState => m_collisionState;
     public MoveOption MOption => m_moveOption;
+    [field:SerializeField, Range(0.0f, Constants.GRAVITY)] public float Gravity { get; set; }
+    [field:SerializeField, Range(0.0f, 8.0f)] public float Speed { get; set; }
     public bool IsGrounded => CState.isGrounded;
     public float GroundInterval => m_moveOption.groundInterval;
     public float Height { get; private set; }
@@ -74,6 +76,7 @@ public class DynamicObject : MonoBehaviour
     /* .. 현재 문제점.. 점프와 지형간의 상호작용이 서로 충돌을 일으켜 제대로 동작이 되지 않음
      * 방식의 문제임 sphereCast로 지형이 있다는 걸 확인하면 발바닥이 땅을 뚫은 만큼 보정 시키므로..
      * 점프와의 충돌을 방지하려면 ..
+     * 다음 프레임에 이동할 방향과 힘을 구해야함..
      * 1. 미리 내가 이동할 위치의 포지션을 구해 경사각을 구한다. (외적으로 구한 방향 * 내적)
      * 2. 이동이 가능한 경사인지 판별한다..
      * 3. 
@@ -81,7 +84,8 @@ public class DynamicObject : MonoBehaviour
     private void Awake()
     {
         m_fixedDeltaTime = Time.fixedDeltaTime;
-        m_castRadius = 0.25f;
+        m_castRadius = 0.15f;
+        m_sphereMaxDistance = 2.0f;
 
         initRigidbody();
 #if UNITY_EDITOR_WIN
@@ -110,17 +114,24 @@ public class DynamicObject : MonoBehaviour
     private void FixedUpdate()
     {
         float distance = Height * 0.5f;
-        Vector3 pivotPoint = new Vector3(Com.rBody.position.x, Com.rBody.position.y + distance, Com.rBody.position.z);
 
         float max = Mathf.Max(Mathf.Abs(m_moveOption.direction.x), Mathf.Abs(m_moveOption.direction.z));
 
-        Vector3 direction = getDirectionFromGroundNormal(transform.forward, pivotPoint, distance);
-        fallObject();
+        Vector3 movement = transform.forward * Speed * max; /*+ new Vector3(0.0f, Gravity, 0.0f)*/ /* 이게 맞을까? */
+        Vector3 pivotPoint = (m_components.rBody.position + movement * m_fixedDeltaTime) + new Vector3(0.0f, distance, 0.0f);
 
-        Vector3 movement = (direction * Speed * 50 * max * m_fixedDeltaTime) +
-            new Vector3(0.0f, Gravity, 0.0f);
+        print(pivotPoint);
+
+        Vector3 direction = getDirectionFromGroundNormal(transform.forward, pivotPoint, m_sphereMaxDistance);
+        movement = direction * Speed * max;
+        // fallObject();
 
         m_components.rBody.velocity = movement;
+
+        m_components.sphereGizmo.Pivot = transform.position + new Vector3(0.0f, m_castRadius, 0.0f);
+    }
+    private void LateUpdate()
+    {
     }
     private void initComponents()
     {
@@ -130,31 +141,39 @@ public class DynamicObject : MonoBehaviour
     {
         if (!TryGetComponent(out Com.rBody)) return;
 
-        Com.rBody.useGravity = false;
-        Com.rBody.freezeRotation = true;
+        m_components.rBody.useGravity = false;
+        m_components.rBody.freezeRotation = true;
     }
     private void initGizmos()
     {
         if (!TryGetComponent(out Com.sphereGizmo)) return;
 
-        Com.sphereGizmo.Radius = m_castRadius;
-        Com.sphereGizmo.Pivot = Vector3.zero;
+        m_components.sphereGizmo.Radius = m_castRadius;
+        m_components.sphereGizmo.Pivot = Vector3.zero;
+
+        m_components.groundCollisionGizmo = gameObject.AddComponent<MyGizmo>();
+        m_components.groundCollisionGizmo.Radius = 0.1f;
+        m_components.groundCollisionGizmo.Pivot = Vector3.zero;
     }
     // .. 해당 함수는 지면을 체크합니다. 지면의 경사각을 체크하여 투영된 방향을 구해줍니다.
     private Vector3 getDirectionFromGroundNormal(Vector3 direction, Vector3 pivotPoint, float distance)
     {
         bool cast = Physics.SphereCast(pivotPoint, m_castRadius, Vector3.down, out RaycastHit hit, distance, 1 << m_layerNum);
-        CState.isGrounded = false;
+        CState.isGrounded = true;
+
         m_moveOption.groundInterval = float.PositiveInfinity;
 
         if (cast) // .. Ray를 발사, 캐릭터가 바닥을 뚫었을때 보정
         {
             m_moveOption.groundInterval = m_components.rBody.position.y - hit.point.y;
 
+            m_components.groundCollisionGizmo.Pivot = hit.point;
+            m_components.groundCollisionGizmo.GizmoColor = new Color(0, 1, 1, 0.5f);
+
+            CState.isGrounded = true;
+            direction = Vector3.ProjectOnPlane(direction, hit.normal).normalized;
             if (m_moveOption.groundInterval <= 0)
             {
-                CState.isGrounded = true;
-                direction = Vector3.ProjectOnPlane(direction, hit.normal);
             }
         }
         // float angle = Vector3.Angle(Vector3.up, hit.normal);

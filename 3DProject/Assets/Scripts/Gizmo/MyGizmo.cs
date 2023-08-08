@@ -15,6 +15,6 @@ public class MyGizmo : MonoBehaviour
     private void OnDrawGizmos()
     {
         Gizmos.color = GizmoColor;
-        Gizmos.DrawSphere(transform.position, Radius);
+        Gizmos.DrawSphere(Pivot, Radius);
     }
 }
