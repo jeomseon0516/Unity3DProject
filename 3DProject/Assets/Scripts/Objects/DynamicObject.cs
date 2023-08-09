@@ -127,7 +127,6 @@ public class DynamicObject : MonoBehaviour
         // fallObject();
 
         m_components.rBody.velocity = movement;
-
         m_components.sphereGizmo.Pivot = transform.position + new Vector3(0.0f, m_castRadius, 0.0f);
     }
     private void LateUpdate()
