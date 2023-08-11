@@ -14,7 +14,7 @@ public static class VerticesTo
 #if UNITY_EDITOR_WIN
             Debug.Log("vertices not found!");
 #endif
-            return 0.0f;
+            return 0f;
         }
 
         float maxPivot = float.NegativeInfinity;

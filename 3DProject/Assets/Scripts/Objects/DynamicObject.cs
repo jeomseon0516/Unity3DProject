@@ -17,6 +17,7 @@ public interface IDynamicObject
  */
 [RequireComponent(typeof(MyGizmo))]
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(CapsuleCollider))]
 public class DynamicObject : MonoBehaviour
 {
     #region MField
@@ -26,15 +27,22 @@ public class DynamicObject : MonoBehaviour
      * -----------------------------------------------------------------------------------------
      */
 
+    private readonly float CHECK_GROUND_DISTANCE = 0.01f; // .. 지면인식 허용 거리 내리막길에서 튀는 현상 방지
+    private readonly float CHECK_MAX_GROUND_INTERVAL = 0.0001f;
+    private readonly float SPHERE_MAX_DISTANCE = 2.0f; // .. Sphere 캐스팅할 거리
+    private readonly float HORIZONTAL_SLOPE_ANGLE_RATIO = 1 / 90f;
+
     public class Components
     {
         [HideInInspector] public Rigidbody rBody;
         [HideInInspector] public MyGizmo sphereGizmo;
         [HideInInspector] public MyGizmo groundCollisionGizmo;
+        [HideInInspector] public CapsuleCollider capsuleCollider;
     }
     public class MoveOption
     {
         public Vector3 direction;
+        public Vector3 horizontalVelocity;
         public Vector3 lookAt;
         public float groundInterval; // .. 지면과의 거리
     }
@@ -44,9 +52,9 @@ public class DynamicObject : MonoBehaviour
         public bool isForwardBlocked;
     }
 
-    private float m_sphereMaxDistance; // .. 
-    private float m_castRadius;
     private float m_fixedDeltaTime;
+    private float m_castRadius; // .. SphereCast시 원점이랑 오버랩발생시 충돌이 일어나지 않으므로 캡슐 Radius보다 조금더 작은 값으로 초기화.
+    private float m_castRadiusDiff; // .. ground와의 distance 계산시 Radius의 오차 범위를 계산하기 위해 저장 
     private int m_layerNum;
 
     private Components m_components = new Components();
@@ -60,6 +68,7 @@ public class DynamicObject : MonoBehaviour
     public bool IsGrounded => CState.isGrounded;
     public float GroundInterval => m_moveOption.groundInterval;
     public float Height { get; private set; }
+    public Vector3 CapsuleBottomCenterPoint => m_components.rBody.position + new Vector3(0.0f, m_components.capsuleCollider.radius, 0.0f);
 
     public Vector3 Direction 
     { 
@@ -83,23 +92,24 @@ public class DynamicObject : MonoBehaviour
      */
     private void Awake()
     {
-        m_fixedDeltaTime = Time.fixedDeltaTime;
-        m_castRadius = 0.15f;
-        m_sphereMaxDistance = 2.0f;
 
-        initRigidbody();
 #if UNITY_EDITOR_WIN
         initGizmos();
 #endif
-        Height = VerticesTo.GetHeightFromVertices(gameObject); // .. 객체의 높이를 구해줌..
-        Gravity = 0.0f;
+        // initComponents();
+        initRigidbody();
+        initCapsuleCollider();
 
-        CState.isGrounded = false;
-        CState.isForwardBlocked = false;
+        m_fixedDeltaTime = Time.fixedDeltaTime;
+        m_castRadius = m_components.capsuleCollider.radius * 0.9f;
+        m_castRadiusDiff = m_components.capsuleCollider.radius - m_castRadius;
+
+        Gravity = 0f;
+
+        m_collisionState.isGrounded = false;
+        m_collisionState.isForwardBlocked = false;
 
         m_layerNum = LayerMask.NameToLayer("Plane");
-        Com.rBody.useGravity = false;
-        initComponents();
     }
     private void Start()
     {
@@ -113,20 +123,13 @@ public class DynamicObject : MonoBehaviour
     }
     private void FixedUpdate()
     {
-        float distance = Height * 0.5f;
-
         float max = Mathf.Max(Mathf.Abs(m_moveOption.direction.x), Mathf.Abs(m_moveOption.direction.z));
 
-        Vector3 movement = transform.forward * Speed * max; /*+ new Vector3(0.0f, Gravity, 0.0f)*/ /* 이게 맞을까? */
-        Vector3 pivotPoint = (m_components.rBody.position + movement * m_fixedDeltaTime) + new Vector3(0.0f, distance, 0.0f);
+        m_moveOption.horizontalVelocity = transform.forward * Speed * max;
+        Vector3 direction = getDirectionFromGroundNormal(transform.forward, CapsuleBottomCenterPoint, SPHERE_MAX_DISTANCE);
+        fallObject();
 
-        print(pivotPoint);
-
-        Vector3 direction = getDirectionFromGroundNormal(transform.forward, pivotPoint, m_sphereMaxDistance);
-        movement = direction * Speed * max;
-        // fallObject();
-
-        m_components.rBody.velocity = movement;
+        m_components.rBody.velocity = m_moveOption.horizontalVelocity + Vector3.up * Gravity;
         m_components.sphereGizmo.Pivot = transform.position + new Vector3(0.0f, m_castRadius, 0.0f);
     }
     private void LateUpdate()
@@ -134,11 +137,22 @@ public class DynamicObject : MonoBehaviour
     }
     private void initComponents()
     {
-        TryGetComponent(out m_components.rBody);
+    }
+    private void initCapsuleCollider()
+    {
+        if (!TryGetComponent(out m_components.capsuleCollider)) return;
+
+        CapsuleCollider capsuleCollider = m_components.capsuleCollider;
+        
+        Height = VerticesTo.GetHeightFromVertices(gameObject); // .. 객체의 높이를 구해줌..
+
+        capsuleCollider.height = Height;
+        capsuleCollider.center = Vector3.up * Height * 0.5f;
+        capsuleCollider.radius = 0.25f;
     }
     private void initRigidbody()
     {
-        if (!TryGetComponent(out Com.rBody)) return;
+        if (!TryGetComponent(out m_components.rBody)) return;
 
         m_components.rBody.useGravity = false;
         m_components.rBody.freezeRotation = true;
@@ -157,23 +171,58 @@ public class DynamicObject : MonoBehaviour
     // .. 해당 함수는 지면을 체크합니다. 지면의 경사각을 체크하여 투영된 방향을 구해줍니다.
     private Vector3 getDirectionFromGroundNormal(Vector3 direction, Vector3 pivotPoint, float distance)
     {
-        bool cast = Physics.SphereCast(pivotPoint, m_castRadius, Vector3.down, out RaycastHit hit, distance, 1 << m_layerNum);
-        CState.isGrounded = true;
+        bool cast = Physics.SphereCast(
+            pivotPoint, 
+            m_castRadius, 
+            Vector3.down, 
+            out RaycastHit hit,
+            distance, 
+            1 << m_layerNum
+            );
 
-        m_moveOption.groundInterval = float.PositiveInfinity;
+        Debug.DrawRay(pivotPoint, Vector3.down * distance, Color.blue);
+
+        CState.isGrounded = false;
 
         if (cast) // .. Ray를 발사, 캐릭터가 바닥을 뚫었을때 보정
         {
-            m_moveOption.groundInterval = m_components.rBody.position.y - hit.point.y;
+            m_moveOption.groundInterval = pivotPoint.y - hit.point.y;
 
             m_components.groundCollisionGizmo.Pivot = hit.point;
             m_components.groundCollisionGizmo.GizmoColor = new Color(0, 1, 1, 0.5f);
 
-            CState.isGrounded = true;
-            direction = Vector3.ProjectOnPlane(direction, hit.normal).normalized;
-            if (m_moveOption.groundInterval <= 0)
-            {
-            }
+            m_moveOption.groundInterval = Mathf.Max(hit.distance - m_castRadiusDiff - CHECK_GROUND_DISTANCE, -10f);
+
+            CState.isGrounded = m_moveOption.groundInterval <= CHECK_MAX_GROUND_INTERVAL;
+
+            // .. 외적한 값
+            float groundSlopeAngle  = Vector3.Angle(hit.normal, Vector3.up);
+            float forwardSlopeAngle = Mathf.Abs(Vector3.Angle(hit.normal, direction) - 90f);
+            Vector3 groundCross    = Vector3.Cross(hit.normal, Vector3.up);
+
+            m_moveOption.horizontalVelocity *= HORIZONTAL_SLOPE_ANGLE_RATIO * -forwardSlopeAngle + 1f;
+            m_moveOption.horizontalVelocity = Quaternion.AngleAxis(-groundSlopeAngle, groundCross) * m_moveOption.horizontalVelocity;
+            // print(Vector3.Cross(hit.normal, Vector3.up));
+            // Vector3 correctionDirection = Vector3.ProjectOnPlane(direction, hit.normal);
+            // direction = correctionDirection;
+
+            // Vector3 correctionPoint = m_components.rBody.position + projectDirection * Speed * m_fixedDeltaTime;
+
+            //if (m_components.rBody.position.y > )
+
+            //    bool correctionCast = Physics.SphereCast(
+            //        correctionPoint,
+            //        m_castRadius,
+            //        Vector3.down,
+            //        out RaycastHit correctionHit,
+            //        distance,
+            //        1 << m_layerNum
+            //        );
+
+            //if (correctionCast)
+            //{
+
+            //}
         }
         // float angle = Vector3.Angle(Vector3.up, hit.normal);
 
@@ -183,8 +232,8 @@ public class DynamicObject : MonoBehaviour
     private void fallObject()
     {
         if (CState.isGrounded)
-            Gravity = 0.0f;
+            Gravity = 0f;
         else
-            Gravity -= Constants.GRAVITY * m_fixedDeltaTime;
+            Gravity += Constants.GRAVITY * m_fixedDeltaTime;
     }
 }

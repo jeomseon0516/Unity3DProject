@@ -23,7 +23,7 @@ public class StateMachine<T> where T : IDynamicObject
     }
     public void RegistState(T t, string key, IState<T> state) // .. 상태를 저장
     {
-        if (_stateList.ContainsKey(key)) return;
+        if (_stateList.ContainsKey(key) || _stateList.ContainsValue(state)) return;
 
         state.Awake(t);
         _stateList.Add(key, state);
