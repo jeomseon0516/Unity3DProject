@@ -78,7 +78,7 @@
     <Compile Include="Assets\MyScriptsPack\Constants.cs" />
     <Compile Include="Assets\Visual Design Cafe\Nature Renderer Demo\Scripts\RenderPipelineLighting.cs" />
     <Compile Include="Assets\Scripts\FindWay\AStar.cs" />
-    <Compile Include="Assets\Scripts\Objects\DynamicObject.cs" />
+    <Compile Include="Assets\Objects\_Scripts\DynamicObject.cs" />
     <Compile Include="Assets\WayPoint\Editors\WayPoint.cs" />
     <Compile Include="Assets\Objects\Character\Scripts\CharacterController.cs" />
     <Compile Include="Assets\Scripts\Manager\RendererManager.cs" />
@@ -89,6 +89,7 @@
     <Compile Include="Assets\Scripts\Gizmo\MyGizmo.cs" />
     <Compile Include="Assets\MyScriptsPack\CustomMath.cs" />
     <Compile Include="Assets\Visual Design Cafe\Nature Renderer Demo\Scripts\OpenWebsiteButton.cs" />
+    <Compile Include="Assets\Objects\_Scripts\WorldCollision.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Visual Design Cafe\ShaderX\Templates\Common\Platforms\GLES3.hlsl" />

@@ -6,14 +6,14 @@ using UnityEngine;
  * .. 상태를 객체화 한다. 
  */
 
-public interface IState<T> where T : IDynamicObject
+public interface IState<T> where T : DynamicObject
 {
     public void Awake(T t);
     public void Enter(T t);
     public void Update(T t);
     public void Exit(T t);
 }
-public class StateMachine<T> where T : IDynamicObject
+public class StateMachine<T> where T : DynamicObject
 {
     private Dictionary<string, IState<T>> _stateList = new Dictionary<string, IState<T>>(); // .. 상태들을 저장. 상태들을 매번 new로 생성하면 가비지가 생성되고 비용이 크기 때문
     private IState<T> _state; // .. 현재 상태
