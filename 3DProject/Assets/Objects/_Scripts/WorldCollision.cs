@@ -54,7 +54,6 @@ public class WorldCollision : MonoBehaviour
     public bool IsJump { get; set; }
     public Vector3 CapsuleBottomCenterPoint => m_components.rigidbody.position + new Vector3(0.0f, m_components.capsuleCollider.radius, 0.0f);
     #endregion
-    // Start is called before the first frame update
     private void Awake()
     {
         initRigidbody();
@@ -132,8 +131,8 @@ public class WorldCollision : MonoBehaviour
         m_components.sphereGizmo.Pivot = m_components.rigidbody.position + new Vector3(0.0f, m_castRadius, 0.0f);
         m_components.rigidbody.velocity = m_moveOption.horizontalVelocity + Vector3.up * Gravity;
     }
-    // .. 해당 함수는 지면을 체크합니다. 지면의 경사각을 체크하여 투영된 방향을 구해줍니다.
 
+    // .. 해당 함수는 지면을 체크합니다. 지면의 경사각을 체크하여 투영된 방향을 구해줍니다.
     private Vector3 getHorizontalVelocityFromGroundNormal(Vector3 velocity, Vector3 direction, Vector3 pivotPoint, float distance)
     {
         m_collisionState.isGrounded = false;
@@ -149,24 +148,31 @@ public class WorldCollision : MonoBehaviour
 
         Debug.DrawRay(pivotPoint, Vector3.down * distance, Color.blue);
 
-        if (cast) // .. Ray를 발사, 캐릭터가 바닥을 뚫었을때 보정
+        if (cast)
         {
-            m_moveOption.groundInterval = pivotPoint.y - hit.point.y;
-
             m_components.groundCollisionGizmo.Pivot = hit.point;
             m_components.groundCollisionGizmo.GizmoColor = new Color(0, 1, 1, 0.5f);
 
             m_moveOption.groundInterval = Mathf.Max(hit.distance - m_castRadiusDiff - CHECK_GROUND_DISTANCE, -10f);
 
-            m_collisionState.isGrounded = m_moveOption.groundInterval <= CHECK_MAX_GROUND_INTERVAL;
+            m_collisionState.isGrounded = hit.point.y + CHECK_MAX_GROUND_INTERVAL >= transform.position.y ;
 
-            float groundSlopeAngle = Vector3.Angle(hit.normal, Vector3.up);
+            // .. angle값 벡터를 내적하여 각도로 변환한 것과 같다.
+            /*
+             *  .. 아래와 같음
+             *  float dot = Vector3.Dot(hit.normal, Vector3.up); 코사인 값
+             *  float radian = Mathf.Acos(dot);
+             *  float angle = radian * Mathf.Rad2Deg;
+             */
+
+            float groundSlopeAngle  = Vector3.Angle(hit.normal, Vector3.up);
             float forwardSlopeAngle = Mathf.Abs(Vector3.Angle(hit.normal, direction) - 90f);
-
+            
             // .. 외적한 값
             Vector3 groundCross = Vector3.Cross(hit.normal, Vector3.up);
-
+            // .. 지면의 경사각 만큼 이동속도 감소
             velocity *= HORIZONTAL_SLOPE_ANGLE_RATIO * -forwardSlopeAngle + 1f;
+            // .. 외적한 값을 기준으로 속도를 회전
             velocity = Quaternion.AngleAxis(-groundSlopeAngle, groundCross) * velocity;
         }
 

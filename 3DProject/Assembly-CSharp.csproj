@@ -68,6 +68,7 @@
     <Compile Include="Assets\WayPoint\Node.cs" />
     <Compile Include="Assets\Visual Design Cafe\Nature Renderer\Runtime\NatureRenderer.SRP.cs" />
     <Compile Include="Assets\Scripts\Rotation.cs" />
+    <Compile Include="Assets\Objects\_Scripts\WorldCollision.cs" />
     <Compile Include="Assets\MyScriptsPack\FollowCamera2D.cs" />
     <Compile Include="Assets\MyScriptsPack\State.cs" />
     <Compile Include="Assets\Visual Design Cafe\Nature Renderer Demo\Scripts\UseReferenceCamera.cs" />
@@ -89,7 +90,6 @@
     <Compile Include="Assets\Scripts\Gizmo\MyGizmo.cs" />
     <Compile Include="Assets\MyScriptsPack\CustomMath.cs" />
     <Compile Include="Assets\Visual Design Cafe\Nature Renderer Demo\Scripts\OpenWebsiteButton.cs" />
-    <Compile Include="Assets\Objects\_Scripts\WorldCollision.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Visual Design Cafe\ShaderX\Templates\Common\Platforms\GLES3.hlsl" />
