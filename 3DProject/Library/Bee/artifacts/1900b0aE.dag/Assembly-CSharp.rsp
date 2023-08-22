@@ -374,7 +374,6 @@
 "Assets/Objects/Character/Scripts/CharacterController.cs"
 "Assets/Objects/Enemy/BigSpikeBall/Scripts/EnemyController.cs"
 "Assets/Objects/_Scripts/DynamicObject.cs"
-"Assets/Objects/_Scripts/WorldCollision.cs"
 "Assets/Scripts/CustomCollision.cs"
 "Assets/Scripts/FieldOfView/FOVController.cs"
 "Assets/Scripts/FindWay/AStar.cs"
