@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Animator))]
+[RequireComponent(typeof(DynamicObject))]
 public partial class CharacterController : MonoBehaviour, IStateObject<CharacterController>
 {
     public class Components
@@ -10,7 +12,6 @@ public partial class CharacterController : MonoBehaviour, IStateObject<Character
         public Animator animator;
         public DynamicObject dynamicObject;
     }
-
     public class MoveOption
     {
         public Vector3 lookAt;
@@ -19,7 +20,6 @@ public partial class CharacterController : MonoBehaviour, IStateObject<Character
         public float runSpeed;
         public float jumpingPower;
     }
-
     private const float DEFAULT_SPEED = 6.0f;
 
     private Components m_components = new Components();
@@ -28,12 +28,9 @@ public partial class CharacterController : MonoBehaviour, IStateObject<Character
     public Components Com => m_components;
     public MoveOption MOption => m_moveOption;
 
-
     private void Awake()
     {
-        GameObject.Find("Main Camera").TryGetComponent(out m_components.mainCamera);
-        TryGetComponent(out m_components.animator);
-        TryGetComponent(out m_components.dynamicObject);
+        initComponents();
     }
     private void Start()
     {
@@ -58,6 +55,12 @@ public partial class CharacterController : MonoBehaviour, IStateObject<Character
         m_moveOption.lookAt = Vector3.zero;
         m_moveOption.direction = Vector3.zero;
     }
+    private void initComponents()
+    {
+        GameObject.Find("Main Camera").TryGetComponent(out m_components.mainCamera);
+        TryGetComponent(out m_components.animator);
+        TryGetComponent(out m_components.dynamicObject);
+    }
 }
 
 public partial class CharacterController : MonoBehaviour
@@ -69,13 +72,12 @@ public partial class CharacterController : MonoBehaviour
         Animator m_animator;
         MoveOption m_moveOption;
         DynamicObject m_dynamicObject;
-
         void IState<CharacterController>.Awake(CharacterController character)
         {
-            m_animator       = character.m_components.m_animator;
-            m_mainCamera     = character.m_mainCamera;
-            m_moveOption     = character.m_moveOption;
-            // m_worldCollision = character.m_worldCollision;
+            m_animator      = character.m_components.animator;
+            m_mainCamera    = character.m_components.mainCamera;
+            m_moveOption    = character.m_moveOption;
+            m_dynamicObject = character.m_components.dynamicObject;
         }
         void IState<CharacterController>.Enter(CharacterController character)
         {
@@ -107,16 +109,18 @@ public partial class CharacterController : MonoBehaviour
                 m_animator.speed = 1;
             }
 
-            character.Speed = 
+            m_moveOption.speed = 
                 Input.GetKey(KeyCode.LeftShift) ? 
-                character.m_runSpeed : 
+                m_moveOption.runSpeed : 
                 CharacterController.DEFAULT_SPEED;
 
             if (Input.GetKeyDown(KeyCode.Space))
-                character.SetJump();
+                m_dynamicObject.SetJump();
+
+            m_dynamicObject.MoveObject(m_moveOption.direction, m_moveOption.lookAt, m_moveOption.speed);
 
             // .. 여기서 상태 변경
-            if (!m_worldCollision.CState.isGrounded)
+            if (!m_dynamicObject.CState.isGrounded)
                 character.m_stateMachine.ChangeState(character, "Fall");
         }
         void IState<CharacterController>.Exit(CharacterController character)
@@ -128,21 +132,20 @@ public partial class CharacterController : MonoBehaviour
     }
     private sealed class FallState : IState<CharacterController>
     {
-        WorldCollisionSphereCast m_worldCollision;
-
-        public void Awake(CharacterController character)
+        DynamicObject m_dynamicObject;
+        void IState<CharacterController>.Awake(CharacterController character)
         {
-            // m_worldCollision = character.m_worldCollision;
+            m_dynamicObject = character.m_components.dynamicObject;
         }
-        public void Enter(CharacterController character)
+        void IState<CharacterController>.Enter(CharacterController character)
         { 
         }
-        public void Update(CharacterController character)
+        void IState<CharacterController>.Update(CharacterController character)
         {
-            if (m_worldCollision.CState.isGrounded)
+            if (m_dynamicObject.CState.isGrounded)
                 character.m_stateMachine.ChangeState(character, "Default");
         }
-        public void Exit(CharacterController character)
+        void IState<CharacterController>.Exit(CharacterController character)
         {
         }
     }

@@ -11,16 +11,17 @@ using UnityEngine;
  * GameObject가 Component List를 가지고 각 컴포넌트들의 동작을 수행하게끔 설계되어 있는 것이다. 
  */
 
-// [RequireComponent(typeof(WorldCollisionSphereCast))]
+[RequireComponent(typeof(MyGizmo))]
+[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(CapsuleCollider))]
 public class DynamicObject : MonoBehaviour
 {
     #region MField
     /*
      * -----------------------------------------------------------------------------------------
-     *                               MemberField
+     *                                      MemberField
      * -----------------------------------------------------------------------------------------
      */
-
     private readonly float CHECK_GROUND_DISTANCE = 0.01f; // .. 지면인식 허용 거리 내리막길에서 튀는 현상 방지
     private readonly float CHECK_MAX_GROUND_INTERVAL = 0.0001f; // .. 지면 체크를 할때 내보정값.
     private readonly float SPHERE_MAX_DISTANCE = 2.0f; // .. Sphere 캐스팅할 거리
@@ -62,7 +63,7 @@ public class DynamicObject : MonoBehaviour
     public bool IsJump { get; set; }
     public Vector3 CapsuleBottomCenterPoint => m_components.rigidbody.position + new Vector3(0.0f, m_components.capsuleCollider.radius, 0.0f);
 
-    protected float m_jumpingPower;
+    private float m_jumpingPower;
     [field: SerializeField, Range(0.0f, 8.0f)] public float Speed { get; set; }
     #endregion
 
@@ -87,10 +88,20 @@ public class DynamicObject : MonoBehaviour
     }
     private void Start()
     {
+        m_fixedDeltaTime = Time.fixedDeltaTime;
     }
     private void Update()
     {
-        transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.LookRotation(m_moveOption.lookAt), 20.0f * Time.deltaTime);
+        transform.rotation = 
+            Quaternion.Lerp(
+            transform.rotation, 
+            Quaternion.LookRotation(m_moveOption.lookAt), 
+            20.0f * Time.deltaTime
+            );
+    }
+    private void FixedUpdate()
+    {
+        moveObject(m_moveOption.direction, m_moveOption.speed);
     }
     #region Initializer
     private void initMoveOption()
@@ -141,7 +152,7 @@ public class DynamicObject : MonoBehaviour
         m_components.groundCollisionGizmo.Pivot = Vector3.zero;
     }
     #endregion
-    public void MoveObject(Vector3 direction, float speed)
+    private void moveObject(Vector3 direction, float speed)
     {
         m_fixedDeltaTime = Time.fixedDeltaTime;
         m_moveOption.direction = direction;
@@ -167,7 +178,6 @@ public class DynamicObject : MonoBehaviour
         m_components.sphereGizmo.Pivot = m_components.rigidbody.position + new Vector3(0.0f, m_castRadius, 0.0f);
         m_components.rigidbody.velocity = m_moveOption.horizontalVelocity + Vector3.up * Gravity;
     }
-
     // .. 해당 함수는 지면을 체크합니다. 지면의 경사각을 체크하여 투영된 방향을 구해줍니다.
     private Vector3 getHorizontalVelocityFromGroundNormal(Vector3 velocity, Vector3 direction, Vector3 pivotPoint, float distance)
     {
@@ -214,7 +224,13 @@ public class DynamicObject : MonoBehaviour
 
         return velocity;
     }
-    protected void SetJump()
+    public void MoveObject(Vector3 direction, Vector3 lookAt, float speed)
+    {
+        m_moveOption.direction = direction;
+        m_moveOption.lookAt = lookAt;
+        m_moveOption.speed = speed;
+    }
+    public void SetJump()
     {
         // m_worldCollision.Gravity = m_jumpingPower;
         // m_worldCollision.IsJump = true;

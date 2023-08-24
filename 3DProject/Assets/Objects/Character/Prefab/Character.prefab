@@ -968,12 +968,12 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 9053561231027291273}
+  - component: {fileID: 2771775301404193700}
   - component: {fileID: 1382242493352241651}
   - component: {fileID: 8440842083508492689}
   - component: {fileID: 2106628050421652860}
   - component: {fileID: 117471748242062298}
-  - component: {fileID: 4441737436815030303}
-  - component: {fileID: 5907819511517178117}
+  - component: {fileID: 7429888842835483221}
   m_Layer: 3
   m_Name: Character
   m_TagString: Untagged
@@ -998,6 +998,18 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2771775301404193700
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5476355294763660954}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8324837e294b0384895e7ef3b8196190, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!95 &1382242493352241651
 Animator:
   serializedVersion: 5
@@ -1061,7 +1073,7 @@ CapsuleCollider:
   m_Height: 1
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &4441737436815030303
+--- !u!114 &7429888842835483221
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1070,22 +1082,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 5476355294763660954}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5fc8cca09c20ed84690ce0670dd752a7, type: 3}
+  m_Script: {fileID: 11500000, guid: 51c754b005106f44ca993f8c92ac73a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   <Gravity>k__BackingField: 0
---- !u!114 &5907819511517178117
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5476355294763660954}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8324837e294b0384895e7ef3b8196190, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
   <Speed>k__BackingField: 0
 --- !u!1 &5752491348711088989
 GameObject:
