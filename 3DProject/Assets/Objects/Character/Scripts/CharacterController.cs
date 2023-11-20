@@ -4,7 +4,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(DynamicObject))]
-public partial class CharacterController : MonoBehaviour, IStateObject<CharacterController>
+public partial class CharacterController : MonoBehaviour, IStateObject
 {
     public class Components
     {
@@ -20,8 +20,8 @@ public partial class CharacterController : MonoBehaviour, IStateObject<Character
         public float runSpeed;
         public float jumpingPower;
     }
-    private const float DEFAULT_SPEED = 6.0f;
 
+    private const float DEFAULT_SPEED = 6.0f;
     private Components m_components = new Components();
     private MoveOption m_moveOption = new MoveOption();
     private StateMachine<CharacterController> m_stateMachine = new StateMachine<CharacterController>();
@@ -43,7 +43,7 @@ public partial class CharacterController : MonoBehaviour, IStateObject<Character
     }
     public void RegistStates()
     {
-        m_stateMachine.RegistState(this, "Fall", new FallState());
+        m_stateMachine.RegistState(this, "Fall",    new FallState());
         m_stateMachine.RegistState(this, "Default", new DefaultState());
         m_stateMachine.ChangeState(this, "Default");
     }
@@ -74,9 +74,9 @@ public partial class CharacterController : MonoBehaviour
         DynamicObject m_dynamicObject;
         void IState<CharacterController>.Awake(CharacterController character)
         {
+            m_moveOption    = character.m_moveOption;
             m_animator      = character.m_components.animator;
             m_mainCamera    = character.m_components.mainCamera;
-            m_moveOption    = character.m_moveOption;
             m_dynamicObject = character.m_components.dynamicObject;
         }
         void IState<CharacterController>.Enter(CharacterController character)
@@ -97,10 +97,12 @@ public partial class CharacterController : MonoBehaviour
                     m_animator.speed = 1.2f;
                 }
 
-                m_moveOption.lookAt = Quaternion.LookRotation(new Vector3(
+                m_moveOption.lookAt = Quaternion.LookRotation(
+                    new Vector3(
                     m_mainCamera.transform.forward.x,
                     0.0f,
-                    m_mainCamera.transform.forward.z)) * m_moveOption.direction;
+                    m_mainCamera.transform.forward.z)
+                    ) * m_moveOption.direction;
             }
 
             if (Input.GetKeyUp(KeyCode.LeftShift))
